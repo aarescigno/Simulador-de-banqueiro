@@ -2,28 +2,43 @@
 
 Ordem de execução, do alicerce ao jogo completo. Cada marco termina jogável e testado; não se começa o próximo sem jogar o anterior. Detalhes de design em [`GDD.md`](GDD.md).
 
-## Marco 0 — Fundação
+## Pré-requisitos (no GitHub, antes da próxima sessão)
 
-Objetivo: esqueleto técnico pronto para receber conteúdo.
+- [ ] Criar a branch `main` a partir desta (hoje o repositório só tem a branch de planejamento, que virou a padrão) e marcá-la como branch padrão.
+- [ ] Tornar o repositório público.
+- [ ] Em Settings → Pages, escolher "Source: GitHub Actions".
 
-- [ ] Projeto TypeScript + Vite + Preact, lint e formatação.
-- [ ] Vitest configurado; CI no GitHub Actions rodando testes a cada push.
-- [ ] Deploy automático no GitHub Pages.
-- [ ] Motor puro: tipo do estado, função `step`, RNG com semente, sistema de eventos.
-- [ ] Save/load em `localStorage` + exportar/importar como texto.
-- [ ] Casca da interface mobile-first: 5 abas, tema terminal, botão "Avançar".
-- [ ] Formato de dados para cartas, eventos e textos.
+## Marco 0 — Fundação + primeiro loop (próxima sessão)
 
-**Pronto quando:** dá para abrir no celular, avançar turnos vazios, salvar e recarregar.
+Objetivo: o jogo instalado no celular, com um loop mínimo do agiota para "sentir" o ritmo. Briefing detalhado em [`PROXIMA-SESSAO.md`](PROXIMA-SESSAO.md).
+
+**Fundação**
+- [ ] Projeto TypeScript + Vite + Preact, ESLint e Prettier.
+- [ ] Vitest; CI no GitHub Actions (typecheck, testes, build) em todo PR.
+- [ ] Deploy automático no GitHub Pages a cada merge na `main`.
+- [ ] PWA: manifesto, ícone, offline, aviso "Nova versão — atualizar", número da versão no menu.
+- [ ] Motor puro: tipo do estado, `step`, RNG com semente, fila de eventos, versão do formato do save.
+- [ ] Autosave único em `localStorage`; exportar/importar como texto.
+- [ ] Casca mobile-first: menu principal, 5 abas, tema terminal, formatação de valores (R$ 20 mil, R$ 1,2 bi).
+- [ ] Aviso de conteúdo na primeira abertura.
+- [ ] Painel dev (10 toques na versão): semente, dar dinheiro, avançar N semanas, ver variáveis ocultas, copiar estado.
+- [ ] Modelos de issue: bug, ajuste de balanço, ideia.
+
+**Primeiro loop do agiota**
+- [ ] Pedidos semanais com ficha (nome, profissão, valor, motivo, risco oculto).
+- [ ] Aceitar com taxa e prazo, ou recusar.
+- [ ] Parcelas semanais; pagamento ou atraso conforme risco e taxa (juro mais alto → mais atraso).
+- [ ] Calote depois de N semanas sem pagar; resumo semanal no Jornal.
+
+**Pronto quando:** você instala pelo link no Android, joga 10 semanas emprestando e cobrando, fecha o app, reabre e a partida continua.
 
 ## Marco 1 — Fatia vertical: Agiota → ESC
 
 Objetivo: provar que o jogo é divertido antes de construir o resto.
 
 **1a. Agiota**
-- [ ] Fichas de devedores (gerador de nomes, profissões, motivos, risco).
-- [ ] Pedidos semanais, negociação de taxa, prazo e garantia.
-- [ ] Pagamento e calote; cobrança em 3 níveis; medo e boca a boca.
+- [ ] Garantias (celular, moto, cartão do INSS retido) e negociação nos pedidos.
+- [ ] Política de cobrança em 3 níveis com exceções por devedor; medo e boca a boca.
 - [ ] Atenção policial (faixa), denúncia, investigação.
 - [ ] Bolso com 3 compartimentos e retiradas.
 - [ ] 15–25 eventos (delegado, milícia, rival, devedor some, tragédia implícita).

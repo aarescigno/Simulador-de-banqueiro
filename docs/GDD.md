@@ -1,6 +1,8 @@
-# Simulador de Banqueiro — documento de design
+# Agiota S.A. — documento de design
 
-Versão 0.1 · 23/10/2026 · consolidado a partir da entrevista inicial e de [`referencia/como-um-banco-ganha-dinheiro.md`](referencia/como-um-banco-ganha-dinheiro.md)
+Versão 0.2 · 23/10/2026 · consolidado a partir de duas rodadas de entrevista e de [`referencia/como-um-banco-ganha-dinheiro.md`](referencia/como-um-banco-ganha-dinheiro.md)
+
+Nome provisório do jogo: **Agiota S.A.** A tese em duas palavras: do agiota ao banco, é o mesmo negócio com CNPJ.
 
 ## 1. Proposta em uma frase
 
@@ -32,8 +34,24 @@ Um jogo de gestão em turnos, no navegador, em que você começa como agiota de 
 | Engrenagem política | Camada própria, logo depois do primeiro marco jogável |
 | Tecnologia | TypeScript + Vite, motor de simulação separado e testável, build estático |
 | Visual | Terminal financeiro + recortes de jornal. Guardadas para o futuro: skin "app de fintech" e "interface que sobe de classe" |
-| Dispositivo | Mobile-first |
-| Primeiro marco | Fatia vertical polida: Agiota → ESC |
+| Dispositivo | Mobile-first, instalável como app no Android (PWA) |
+| Primeiro marco | Fatia vertical polida: Agiota → ESC, 30–45 min para um jogador novo |
+
+### Segunda rodada (23/10/2026)
+
+| Tema | Decisão |
+| --- | --- |
+| Nome | Agiota S.A. (provisório) |
+| Valores | Reais em escala real, exibidos abreviados (R$ 20 mil, R$ 1,2 bi) |
+| Origem do banqueiro | Fixa no marco 1 ("veio de baixo"); origens escolhíveis no marco 6 |
+| Cenário | Cidade fictícia brasileira (provisório: São Jurandir do Norte); os bairros mudam com o degrau: periferia → centro → "Faria Lima" local |
+| Microgestão no agiota | Pedidos novos decididos um a um; cobrança por política padrão, com exceções por devedor (escalar ou perdoar) |
+| Save | Autosave único por partida, sem voltar atrás; a herança compensa o fracasso |
+| Dificuldade | Uma só no marco 1 |
+| Prioridade | Diversão primeiro, mas a direção de cada efeito tem que ser real (juro alto → mais calote, nunca o contrário). Simplificações ficam registradas nas notas "na vida real" |
+| Conteúdo sensível | Tragédias com devedores (inclusive suicídio) podem ocorrer, sempre implícitas e secas; aviso de conteúdo no início do jogo e nota discreta do CVV (188) |
+| Textos | Claude escreve no tom definido; ficam em arquivos de dados fáceis de editar |
+| Arte | Ícones SVG (Lucide) + tipografia; rostos como iniciais ou silhuetas geradas |
 
 ## 4. Loop central
 
@@ -197,6 +215,7 @@ Ela entra genérica desde o degrau 1 (o delegado do bairro, o vereador) e cresce
 - Manchetes de jornal fictício a cada fechamento.
 - **Nomes fictícios** para bancos, pessoas e cidades dentro do jogo. Casos reais aparecem só nas notas educativas, com fonte. Isso protege o jogo, já que é público na web.
 - Violência sempre implícita: o "primo", a "visita", o BO, o sumiço.
+- Tragédias com devedores, inclusive suicídio, podem acontecer, mas só de forma indireta e seca ("A família pediu que não houvesse cobrança no velório"). Nunca descrição do ato. O jogo abre com um aviso de conteúdo, e a nota do CVV (188, cvv.org.br) aparece de forma discreta junto desses eventos.
 
 ## 13. Camada educativa (público geral)
 
@@ -223,10 +242,14 @@ Barra de navegação inferior com cinco abas:
 
 ## 15. Arquitetura técnica
 
-- **Stack:** TypeScript + Vite. Interface em Preact (leve, componentes, bom para mobile). Testes com Vitest. Deploy estático no GitHub Pages via GitHub Actions.
+- **Stack:** TypeScript + Vite. Interface em Preact (leve, componentes, bom para mobile). Testes com Vitest. Deploy estático no GitHub Pages via GitHub Actions a cada merge na `main`. Repositório público.
+- **PWA:** manifesto + service worker (vite-plugin-pwa); instalável no Android e jogável offline. Quando sai uma versão nova, aparece o aviso "Nova versão — atualizar" (nunca recarrega sozinho no meio da partida). O número da versão fica visível no menu principal.
+- **Caminho base relativo** no build, para funcionar em `https://aarescigno.github.io/<repo>/` sem depender do nome do repositório.
 - **Motor puro:** `step(estado, decisões, rng) → { estado, eventos }`, sem DOM, determinístico com semente. Mesma semente + mesmas decisões = mesma partida, o que permite reproduzir bugs e compartilhar partidas.
 - **Conteúdo como dados:** cartas, eventos, nomes, textos e parâmetros de degrau em arquivos de dados, separados da lógica. Adicionar uma prática nova não exige mexer no motor.
-- **Save:** estado serializável, autosave em `localStorage`, exportar/importar como texto.
+- **Save:** estado serializável com número de versão do formato (para migrar saves antigos), autosave único em `localStorage` a cada turno, exportar/importar como texto.
+- **Painel dev:** aparece ao tocar 10 vezes no número da versão no menu principal. Permite escolher semente, pular de degrau, dar dinheiro, forçar evento, ver as variáveis ocultas (probabilidades, buraco oculto) e **copiar estado** (semente + turno + save) para colar numa issue.
+- **Nomes no código:** estrutura em inglês (`step`, `state`, `loan`, `debtor`), termos do domínio brasileiro em português quando não têm tradução boa (`agiota`, `esc`, `consignado`, `fgc`, `pdd`, `laranja`). Textos do jogo em português, sempre em arquivos de dados, nunca escritos dentro da interface.
 - **Balanceamento por simulação:** scripts em Node rodam milhares de partidas com bots de estratégia (honesto, ganancioso legal, cinzento, "modo Master") e verificam metas, por exemplo: "o modo ilegal tem retorno maior em 20 turnos e taxa de ruína acima de 80% em 60 turnos".
 
 Estrutura prevista:
@@ -245,9 +268,9 @@ docs/         este documento, roadmap e referência
 
 ### Degrau 1 — Agiota (turno: semana)
 
-- **Início:** R$ 20 mil de economias, um bairro fictício, um caderninho.
-- **A cada semana:** chegam de 1 a 4 pedidos (ficha: nome, profissão, valor, motivo, sinais de risco). Você aceita, recusa ou negocia taxa (% ao mês), prazo e garantia (celular, moto, cartão do benefício do INSS retido).
-- **Cobrança por devedor**, em três níveis: conversa, pressão (ligar no trabalho, na família), "mandar o primo". Cada nível aumenta o pagamento, o medo e a chance de denúncia.
+- **Início:** R$ 20 mil de economias, um bairro de periferia de São Jurandir do Norte, um caderninho.
+- **A cada semana:** chegam de 1 a 4 pedidos (ficha: nome, profissão, valor, motivo, sinais de risco). Você decide cada um: aceita, recusa ou negocia taxa (% ao mês), prazo e garantia (celular, moto, cartão do benefício do INSS retido).
+- **Cobrança por política:** uma regra padrão vale para todos (ex.: "conversa na 1ª semana de atraso, pressão na 2ª, o primo na 4ª"); em cada devedor dá para abrir exceção (escalar já ou perdoar). Os três níveis são conversa, pressão (ligar no trabalho, na família) e "mandar o primo". Cada nível aumenta o pagamento, o medo e a chance de denúncia.
 - **Indicadores:** caixa, carteira, calote, boca a boca (atrai clientes e atenção), medo, atenção policial (faixa), bolso.
 - **Eventos:** devedor some; tragédia com devedor (implícita); denúncia; o delegado quer "colaborar"; a milícia do bairro quer a parte dela; agiota rival baixa a taxa.
 - **Fim:** prisão (usura, crime contra o sistema financeiro, lavagem), morte (implícita) ou subida para ESC.
@@ -266,15 +289,18 @@ Uma condenação no degrau 1 fecha a porta dos degraus regulados (3+) para o seu
 - **Ameaças:** Receita Federal, ações judiciais de clientes, limite de crescimento.
 - **Fim do marco:** a escada continua (tela de "em breve" para SCD) ou game over/epílogo/herança.
 
-## 17. Perguntas em aberto
+## 17. Fluxo de trabalho
 
-Não bloqueiam o marco 1, mas precisam de resposta antes do lançamento público:
+- Cada entrega é um PR pequeno para a `main` (uma fatia jogável por vez, ex.: "pedidos de empréstimo").
+- O merge na `main` publica no GitHub Pages; o teste é feito no celular Android, com o jogo instalado pelo navegador. Não há preview por PR: a `main` é o ambiente de teste.
+- Feedback chega por issues do GitHub com modelos (bug, ajuste de balanço, ideia), fáceis de preencher no celular, de preferência com o estado copiado do painel dev. As sessões seguintes trabalham a partir das issues abertas.
+- Antes de cada PR: testes do motor, typecheck e build passando.
 
-1. Nome do jogo.
-2. O banqueiro tem origem escolhível (herdeiro x veio de baixo) com modificadores?
-3. Cidade fictícia genérica ou inspirada em uma real?
-4. Escala de valores: reais "realistas" (milhões, bilhões) ou valores comprimidos para legibilidade?
-5. Nível de dificuldade selecionável?
-6. Só português, ou preparar textos para tradução desde já?
-7. Som e música: sim, não, depois?
-8. Licença e publicação: código aberto? Domínio próprio?
+## 18. Perguntas em aberto
+
+Não bloqueiam o marco 1:
+
+1. Nome definitivo do jogo e da cidade.
+2. Tradução: preparar a estrutura de textos para outros idiomas desde já ou só depois?
+3. Som e música: sim, não, depois?
+4. Licença: código aberto com qual licença (ex.: MIT para o código, CC BY-NC para os textos)? Domínio próprio?
