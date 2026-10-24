@@ -1,0 +1,52 @@
+:root {
+  --bg: #0b0f0c;
+  --fg: #c8d6cc;
+  --dim: #6b7d70;
+  --green: #3ddc84;
+  --amber: #f2b33d;
+  --red: #ff5c5c;
+  --line: #1f2a22;
+  --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 16px;
+}
+h1 {
+  font-family: var(--mono);
+  color: var(--green);
+}
+.mono {
+  font-family: var(--mono);
+}
+.dim {
+  color: var(--dim);
+}
+.menu {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  text-align: center;
+}
+.version {
+  color: var(--dim);
+  font-size: 13px;
+}
