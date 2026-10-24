@@ -1,5 +1,6 @@
 // Texto do Jornal a partir dos eventos do motor. Voz de relatório, frases curtas.
 import type { GameEvent, WeekReport } from '../engine/state';
+import { collateralText } from './collateral';
 import { money, percent } from './format';
 import { params } from './params';
 
@@ -42,15 +43,26 @@ export function reportLines(r: WeekReport): string[] {
   }
 
   for (const e of ofType(ev, 'defaulted')) {
+    const seized = e.collateral
+      ? ` ${collateralText[e.collateral].seized}${e.recovered ? `: ${money(e.recovered)}` : ''}.`
+      : '';
+    const lost = e.writtenOff > 0 ? ` Baixado: ${money(e.writtenOff)}.` : '';
     lines.push(
-      `${e.name} não paga há ${params.payment.defaultAfterWeeks} semanas. Baixado: ${money(e.writtenOff)}.`,
+      `${e.name} não paga há ${params.payment.defaultAfterWeeks} semanas.${seized}${lost}`,
     );
   }
 
   for (const e of ofType(ev, 'loanMade')) {
+    const guarantee = e.collateral ? ` Garantia: ${collateralText[e.collateral].noun}.` : '';
     lines.push(
-      `Emprestado a ${e.name}: ${money(e.amount)} a ${percent(e.monthlyRate)} ao mês, ${e.weeks} semanas.`,
+      `Emprestado a ${e.name}: ${money(e.amount)} a ${percent(e.monthlyRate)} ao mês, ${e.weeks} semanas.${guarantee}`,
     );
+  }
+
+  const walked = ofType(ev, 'walkedOut');
+  if (walked.length) {
+    const verb = walked.length === 1 ? 'não topou a taxa. Foi' : 'não toparam a taxa. Foram';
+    lines.push(`${joinNames(walked.map((e) => e.name))} ${verb} pedir a outro.`);
   }
 
   const refused = ofType(ev, 'refused');

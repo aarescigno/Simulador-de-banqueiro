@@ -78,7 +78,15 @@ export const ui = {
     term: 'Prazo',
     termValue: (w: number) => `${w} semanas`,
     quote: (installment: string, total: string) => `Parcela ${installment}/semana · total ${total}`,
-    lend: 'Emprestar',
+    lend: 'Oferecer',
+    collateral: 'Garantia',
+    noCollateral: 'Sem garantia',
+    asset: (label: string, value: string, perMonth?: boolean) =>
+      `${label} · ${value}${perMonth ? '/mês' : ''}`,
+    counter: (pct: string, collateral: string | null) =>
+      collateral ? `“Deixando ${collateral}, só fecho a ${pct}.”` : `“A ${pct} eu fecho.”`,
+    takeCounter: (pct: string) => `Fechar a ${pct}`,
+    guarantee: (label: string) => `Garantia: ${label.toLowerCase()}`,
     refuse: 'Recusar',
     noCash: 'Caixa não cobre.',
     progress: (paid: number, weeks: number) => `${paid}/${weeks} parcelas`,

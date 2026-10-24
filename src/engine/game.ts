@@ -4,6 +4,7 @@ import {
   collect,
   generateRequests,
   makeLoan,
+  tolerance,
   validTerms,
   type LoanTerms,
 } from './agiota';
@@ -29,7 +30,7 @@ export function newGame(seed: number): GameState {
     requests: [],
     loans: [],
     nextId: 1,
-    stats: { lent: 0, received: 0, writtenOff: 0 },
+    stats: { lent: 0, received: 0, writtenOff: 0, recovered: 0 },
     queue: [{ week: 1, event: { type: 'gameStarted' } }],
     journal: [],
     devUsed: false,
@@ -41,19 +42,37 @@ export function newGame(seed: number): GameState {
 
 /**
  * Resposta a um pedido, aplicada na hora. O evento entra na fila e sai no
- * relatório desta semana. Decisões inválidas lançam erro.
+ * relatório desta semana. Proposta acima do que o devedor topa vira
+ * contraproposta no pedido; sem paciência, ele vai embora. Decisões inválidas
+ * lançam erro.
  */
 export function decide(prev: GameState, d: Decision): GameState {
   const req = prev.requests.find((r) => r.id === d.requestId);
   if (!req) throw new Error(`Pedido ${d.requestId} não existe.`);
   const state: GameState = structuredClone(prev);
-  state.requests = state.requests.filter((r) => r.id !== d.requestId);
+  const pending = state.requests;
+  state.requests = pending.filter((r) => r.id !== d.requestId);
   if (d.type === 'refuse') {
     return schedule(state, state.week, { type: 'refused', name: req.debtor.short });
   }
   if (!canAccept(prev, d.requestId)) throw new Error('Caixa insuficiente.');
   if (!validTerms(d)) throw new Error('Taxa ou prazo fora dos limites.');
-  const terms = { monthlyRate: d.monthlyRate, weeks: d.weeks };
+  const collateral = d.collateral ?? null;
+  if (collateral && !req.assets.some((a) => a.kind === collateral)) {
+    throw new Error('O devedor não tem essa garantia.');
+  }
+
+  const max = tolerance(req, collateral);
+  if (d.monthlyRate > max) {
+    if (req.patience <= 0) {
+      return schedule(state, state.week, { type: 'walkedOut', name: req.debtor.short });
+    }
+    const countered = { ...req, patience: req.patience - 1, counter: { rate: max, collateral } };
+    state.requests = pending.map((r) => (r.id === req.id ? structuredClone(countered) : r));
+    return state;
+  }
+
+  const terms = { monthlyRate: d.monthlyRate, weeks: d.weeks, collateral };
   state.loans.push(makeLoan(state, req, terms));
   state.cash -= req.amount;
   state.stats.lent += req.amount;

@@ -25,3 +25,30 @@ describe('save', () => {
     expect(() => deserialize('{"saveVersion": 999}')).toThrow(SaveError);
   });
 });
+
+describe('migração', () => {
+  it('save da versão 1 ganha garantias e negociação', () => {
+    const s = advanceWeeks(newGame(3), 2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- save antigo, sem tipo
+    const v1 = JSON.parse(serialize(s)) as Record<string, any>;
+    v1.saveVersion = 1;
+    for (const r of v1.requests) {
+      delete r.assets;
+      delete r.maxRate;
+      delete r.patience;
+    }
+    for (const l of v1.loans) {
+      delete l.collateral;
+      delete l.recovered;
+    }
+    delete v1.stats.recovered;
+    const migrated = deserialize(JSON.stringify(v1));
+    expect(migrated.saveVersion).toBe(2);
+    expect(migrated.stats.recovered).toBe(0);
+    for (const r of migrated.requests) {
+      expect(r.assets[0]!.kind).toBe('celular');
+      expect(r.maxRate).toBeGreaterThan(0);
+    }
+    expect(() => advanceWeeks(migrated, 3)).not.toThrow();
+  });
+});

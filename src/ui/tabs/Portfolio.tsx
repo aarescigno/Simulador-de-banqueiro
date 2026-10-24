@@ -1,8 +1,9 @@
 import { useState } from 'preact/hooks';
+import { collateralText } from '../../content/collateral';
 import { params } from '../../content/params';
 import { money, percent } from '../../content/format';
 import { ui } from '../../content/ui';
-import { decide, quote, type Loan, type LoanRequest } from '../../engine';
+import { decide, quote, type CollateralKind, type Loan, type LoanRequest } from '../../engine';
 import type { TabProps } from '../Game';
 
 export function Portfolio({ state, update }: TabProps) {
@@ -21,8 +22,10 @@ export function Portfolio({ state, update }: TabProps) {
           key={r.id}
           request={r}
           cash={state.cash}
-          onLend={(monthlyRate, weeks) =>
-            update(decide(state, { type: 'accept', requestId: r.id, monthlyRate, weeks }))
+          onLend={(monthlyRate, weeks, collateral) =>
+            update(
+              decide(state, { type: 'accept', requestId: r.id, monthlyRate, weeks, collateral }),
+            )
           }
           onRefuse={() => update(decide(state, { type: 'refuse', requestId: r.id }))}
         />
@@ -57,11 +60,13 @@ function RequestCard({
 }: {
   request: LoanRequest;
   cash: number;
-  onLend: (rate: number, weeks: number) => void;
+  onLend: (rate: number, weeks: number, collateral: CollateralKind | null) => void;
   onRefuse: () => void;
 }) {
   const [rate, setRate] = useState(lastTerms.rate);
   const [weeks, setWeeks] = useState(lastTerms.weeks);
+  const [collateral, setCollateral] = useState<CollateralKind | null>(null);
+  const counter = r.counter;
   const q = quote(r.amount, { monthlyRate: rate, weeks });
   const affordable = r.amount <= cash;
   const { rate: rl, weeks: wl } = params.terms;
@@ -79,6 +84,32 @@ function RequestCard({
         <span class="mono amber big right">{money(r.amount)}</span>
       </div>
       <p class="reason">“{r.reason}”</p>
+
+      <div class="stack tight">
+        <span class="dim small">{ui.portfolio.collateral}</span>
+        <div class="row">
+          <button
+            class={`chip ${collateral === null ? 'on' : ''}`}
+            aria-pressed={collateral === null}
+            onClick={() => setCollateral(null)}
+          >
+            {ui.portfolio.noCollateral}
+          </button>
+          {r.assets.map((a) => {
+            const t = collateralText[a.kind];
+            return (
+              <button
+                key={a.kind}
+                class={`chip ${collateral === a.kind ? 'on' : ''}`}
+                aria-pressed={collateral === a.kind}
+                onClick={() => setCollateral(a.kind)}
+              >
+                {ui.portfolio.asset(t.label, money(a.value), t.perMonth)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <label class="slider">
         <span class="row between">
@@ -110,13 +141,34 @@ function RequestCard({
       </label>
       <p class="mono small">{ui.portfolio.quote(money(q.installment), money(q.totalDue))}</p>
 
+      {counter && (
+        <div class="row between">
+          <p class="reason amber">
+            {ui.portfolio.counter(
+              percent(counter.rate),
+              counter.collateral && collateralText[counter.collateral].noun,
+            )}
+          </p>
+          <button
+            class="btn amber-btn"
+            disabled={!affordable}
+            onClick={() => {
+              lastTerms = { rate: counter.rate, weeks };
+              onLend(counter.rate, weeks, counter.collateral);
+            }}
+          >
+            {ui.portfolio.takeCounter(percent(counter.rate))}
+          </button>
+        </div>
+      )}
+
       <div class="row">
         <button
           class="btn primary grow-btn"
           disabled={!affordable}
           onClick={() => {
             lastTerms = { rate, weeks };
-            onLend(rate, weeks);
+            onLend(rate, weeks, collateral);
           }}
         >
           {affordable ? ui.portfolio.lend : ui.portfolio.noCash}
@@ -136,7 +188,7 @@ function LoanRow({ loan: l }: { loan: Loan }) {
     status = ui.portfolio.paid(money(l.totalPaid - l.principal));
     tone = 'green';
   } else if (l.status === 'defaulted') {
-    status = ui.portfolio.defaulted(money(l.totalDue - l.totalPaid));
+    status = ui.portfolio.defaulted(money(l.totalDue - l.totalPaid - l.recovered));
     tone = 'red';
   } else if (l.missedStreak > 0) {
     status = ui.portfolio.late(l.missedStreak);
@@ -163,6 +215,11 @@ function LoanRow({ loan: l }: { loan: Loan }) {
         <div class="row between small mono dim">
           <span>{ui.portfolio.progress(l.paidInstallments, l.weeks)}</span>
           <span>{ui.portfolio.installment(money(l.installment))}</span>
+        </div>
+      )}
+      {l.status === 'active' && l.collateral && (
+        <div class="small dim">
+          {ui.portfolio.guarantee(collateralText[l.collateral.kind].label)}
         </div>
       )}
     </article>
