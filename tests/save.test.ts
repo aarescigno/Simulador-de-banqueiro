@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { advanceWeeks, newGame } from '../src/engine/game';
+import { playBot } from '../sim/bot';
 import { deserialize, exportSave, importSave, SaveError, serialize } from '../src/engine/save';
 
 describe('save', () => {
   it('ida e volta em JSON', () => {
-    const s = advanceWeeks(newGame(99), 5);
+    const s = playBot(newGame(99), 5, { monthlyRate: 20, weeks: 8 });
     expect(deserialize(serialize(s))).toEqual(s);
   });
 
   it('ida e volta como texto exportado', () => {
-    const s = advanceWeeks(newGame(99), 5);
+    const s = playBot(newGame(99), 5, { monthlyRate: 20, weeks: 8 });
     expect(importSave(exportSave(s))).toEqual(s);
   });
 

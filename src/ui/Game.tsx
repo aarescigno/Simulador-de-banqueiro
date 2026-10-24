@@ -17,12 +17,13 @@ import { Placeholder } from './tabs/Placeholder';
 import { Portfolio } from './tabs/Portfolio';
 import { Summary } from './tabs/Summary';
 
+export type TabId = keyof typeof ui.tabs;
+
 export interface TabProps {
   state: GameState;
   update: (s: GameState) => void;
+  goTo: (tab: TabId) => void;
 }
-
-type TabId = keyof typeof ui.tabs;
 
 const tabs: { id: TabId; icon: LucideIcon; view: ComponentType<TabProps> }[] = [
   { id: 'summary', icon: LayoutDashboard, view: Summary },
@@ -40,7 +41,13 @@ const tabs: { id: TabId; icon: LucideIcon; view: ComponentType<TabProps> }[] = [
   { id: 'journal', icon: Newspaper, view: Journal },
 ];
 
-export function Game({ state, update, onMenu }: TabProps & { onMenu: () => void }) {
+interface GameProps {
+  state: GameState;
+  update: (s: GameState) => void;
+  onMenu: () => void;
+}
+
+export function Game({ state, update, onMenu }: GameProps) {
   const [tab, setTab] = useState<TabId>('summary');
   const View = tabs.find((t) => t.id === tab)!.view;
 
@@ -54,7 +61,7 @@ export function Game({ state, update, onMenu }: TabProps & { onMenu: () => void 
         <span class="mono green">{money(state.cash)}</span>
       </header>
       <section class="content">
-        <View state={state} update={update} />
+        <View state={state} update={update} goTo={setTab} />
       </section>
       <nav class="tabbar">
         {tabs.map(({ id, icon: Icon }) => (
@@ -66,6 +73,9 @@ export function Game({ state, update, onMenu }: TabProps & { onMenu: () => void 
           >
             <Icon size={20} />
             <span>{ui.tabs[id]}</span>
+            {id === 'portfolio' && state.requests.length > 0 && (
+              <span class="badge mono">{state.requests.length}</span>
+            )}
           </button>
         ))}
       </nav>

@@ -11,7 +11,8 @@
     "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "sim": "vite-node sim/balance.ts"
   },
   "dependencies": {
     "lucide-preact": "^1.61.0",
