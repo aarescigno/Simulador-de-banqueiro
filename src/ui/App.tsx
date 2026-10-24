@@ -23,6 +23,7 @@ export function App() {
       ) : (
         <Menu
           state={state}
+          update={update}
           onContinue={() => setScreen('game')}
           onNewGame={(seed = randomSeed()) => {
             update(newGame(seed));

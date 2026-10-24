@@ -310,3 +310,26 @@ textarea.code {
   flex: 1;
   color: var(--amber);
 }
+
+/* Painel dev */
+pre.code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.grow {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.sheet label {
+  margin-bottom: -8px;
+}

@@ -3,16 +3,27 @@ import { exportSave, importSave, SaveError, type GameState } from '../engine';
 import { money } from '../content/format';
 import { ui } from '../content/ui';
 import { copyText } from './clipboard';
+import { DevPanel } from './DevPanel';
+
+const DEV_TAPS = 10;
 
 interface Props {
   state: GameState | null;
   onContinue: () => void;
   onNewGame: (seed?: number) => void;
   onLoad: (state: GameState) => void;
+  update: (state: GameState) => void;
 }
 
-export function Menu({ state, onContinue, onNewGame, onLoad }: Props) {
-  const [panel, setPanel] = useState<'none' | 'export' | 'import'>('none');
+export function Menu({ state, onContinue, onNewGame, onLoad, update }: Props) {
+  const [panel, setPanel] = useState<'none' | 'export' | 'import' | 'dev'>('none');
+  const [taps, setTaps] = useState(0);
+
+  const tapVersion = () => {
+    const n = taps + 1;
+    setTaps(n >= DEV_TAPS ? 0 : n);
+    if (n >= DEV_TAPS) setPanel('dev');
+  };
 
   return (
     <main class="menu">
@@ -45,7 +56,20 @@ export function Menu({ state, onContinue, onNewGame, onLoad }: Props) {
           {ui.menu.importSave}
         </button>
       </div>
-      <p class="version mono">{ui.version(__APP_VERSION__)}</p>
+      <p class="version mono" onClick={tapVersion}>
+        {ui.version(__APP_VERSION__)}
+      </p>
+      {panel === 'dev' && (
+        <DevPanel
+          state={state}
+          update={update}
+          onNewGame={(seed) => {
+            setPanel('none');
+            onNewGame(seed);
+          }}
+          onClose={() => setPanel('none')}
+        />
+      )}
       {panel === 'export' && state && (
         <ExportPanel text={exportSave(state)} onClose={() => setPanel('none')} />
       )}

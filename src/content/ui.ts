@@ -72,6 +72,23 @@ export const ui = {
     soon: 'Em seu nome, laranja, offshore. Ainda não. Por enquanto, todo o dinheiro está no caixa.',
   },
 
+  dev: {
+    title: 'Painel dev',
+    seed: 'Semente',
+    newWithSeed: 'Nova partida com esta semente',
+    money: 'Dar dinheiro',
+    give: 'Dar',
+    weeks: 'Avançar semanas',
+    advance: 'Avançar',
+    hidden: 'Variáveis ocultas',
+    noGame: 'Sem partida em andamento.',
+    copyState: 'Copiar estado',
+    copied: 'Estado copiado. Cole na issue.',
+    close: 'Fechar',
+    report: (version: string, seed: number, week: number, save: string) =>
+      `Agiota S.A. ${version}\nsemente: ${seed}\nsemana: ${week}\nsave: ${save}`,
+  },
+
   journal: {
     title: 'Jornal',
     empty: 'Nenhuma edição ainda. Avance uma semana.',
