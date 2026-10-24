@@ -50,3 +50,35 @@ h1 {
   color: var(--dim);
   font-size: 13px;
 }
+.btn {
+  font: inherit;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 14px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.btn.primary {
+  border-color: var(--green);
+  color: var(--green);
+}
+.toast {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  background: #111a14;
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  z-index: 50;
+}
+.toast span {
+  flex: 1;
+  color: var(--amber);
+}
