@@ -7,4 +7,17 @@ Jogo de gestão em turnos, no navegador e instalável no celular: comece como ag
 - [Briefing da próxima sessão](docs/PROXIMA-SESSAO.md)
 - [Referência: como um banco ganha dinheiro](docs/referencia/como-um-banco-ganha-dinheiro.md)
 
-Status: planejamento concluído; Marco 0 (fundação + primeiro loop) é o próximo passo.
+Status: Marco 0 (fundação + primeiro loop do agiota) concluído; o Marco 1 é o próximo passo.
+
+## Desenvolvimento
+
+```sh
+npm install
+npm run dev        # servidor local
+npm run typecheck
+npm test
+npm run build
+npm run sim        # balanço: patrimônio e calote por taxa e prazo
+```
+
+Painel dev: no menu, toque 10 vezes no número da versão.

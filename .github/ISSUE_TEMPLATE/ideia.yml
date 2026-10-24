@@ -1,0 +1,15 @@
+name: Ideia
+description: Mecânica, evento, texto ou tela nova.
+labels: [ideia]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: A ideia
+    validations:
+      required: true
+  - type: textarea
+    id: real
+    attributes:
+      label: Na vida real (opcional)
+      description: Caso real ou fonte que inspira a ideia.

@@ -1,0 +1,26 @@
+name: Bug
+description: Algo quebrou ou se comportou errado.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: O que aconteceu
+      placeholder: Toquei em "Avançar semana" e o caixa ficou negativo.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que eu esperava
+  - type: textarea
+    id: state
+    attributes:
+      label: Estado copiado
+      description: No menu, toque 10 vezes no número da versão, depois em "Copiar estado", e cole aqui.
+      render: text
+  - type: input
+    id: device
+    attributes:
+      label: Aparelho
+      placeholder: Android, app instalado

@@ -1,0 +1,21 @@
+name: Ajuste de balanço
+description: Algo fácil, difícil, lento ou rápido demais.
+labels: [balanço]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: O que está fora do lugar
+      placeholder: Juro de 50% ao mês ainda compensa demais.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Sugestão
+  - type: textarea
+    id: state
+    attributes:
+      label: Estado copiado (opcional)
+      description: Painel dev (10 toques na versão) → "Copiar estado".
+      render: text
