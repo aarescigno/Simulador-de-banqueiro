@@ -4,9 +4,9 @@ Ordem de execução, do alicerce ao jogo completo. Cada marco termina jogável e
 
 ## Pré-requisitos (no GitHub, antes da próxima sessão)
 
-- [ ] Criar a branch `main` a partir desta (hoje o repositório só tem a branch de planejamento, que virou a padrão) e marcá-la como branch padrão.
-- [ ] Tornar o repositório público.
-- [ ] Em Settings → Pages, escolher "Source: GitHub Actions".
+- [x] Criar a branch `main` a partir desta (hoje o repositório só tem a branch de planejamento, que virou a padrão) e marcá-la como branch padrão.
+- [x] Tornar o repositório público.
+- [x] Em Settings → Pages, escolher "Source: GitHub Actions".
 
 ## Marco 0 — Fundação + primeiro loop (próxima sessão)
 
