@@ -13,22 +13,22 @@ Ordem de execução, do alicerce ao jogo completo. Cada marco termina jogável e
 Objetivo: o jogo instalado no celular, com um loop mínimo do agiota para "sentir" o ritmo. Briefing detalhado em [`PROXIMA-SESSAO.md`](PROXIMA-SESSAO.md).
 
 **Fundação**
-- [ ] Projeto TypeScript + Vite + Preact, ESLint e Prettier.
-- [ ] Vitest; CI no GitHub Actions (typecheck, testes, build) em todo PR.
-- [ ] Deploy automático no GitHub Pages a cada merge na `main`.
-- [ ] PWA: manifesto, ícone, offline, aviso "Nova versão — atualizar", número da versão no menu.
-- [ ] Motor puro: tipo do estado, `step`, RNG com semente, fila de eventos, versão do formato do save.
-- [ ] Autosave único em `localStorage`; exportar/importar como texto.
-- [ ] Casca mobile-first: menu principal, 5 abas, tema terminal, formatação de valores (R$ 20 mil, R$ 1,2 bi).
-- [ ] Aviso de conteúdo na primeira abertura.
-- [ ] Painel dev (10 toques na versão): semente, dar dinheiro, avançar N semanas, ver variáveis ocultas, copiar estado.
-- [ ] Modelos de issue: bug, ajuste de balanço, ideia.
+- [x] Projeto TypeScript + Vite + Preact, ESLint e Prettier.
+- [x] Vitest; CI no GitHub Actions (typecheck, testes, build) em todo PR.
+- [x] Deploy automático no GitHub Pages a cada merge na `main`.
+- [x] PWA: manifesto, ícone, offline, aviso "Nova versão — atualizar", número da versão no menu.
+- [x] Motor puro: tipo do estado, `step`, RNG com semente, fila de eventos, versão do formato do save.
+- [x] Autosave único em `localStorage`; exportar/importar como texto.
+- [x] Casca mobile-first: menu principal, 5 abas, tema terminal, formatação de valores (R$ 20 mil, R$ 1,2 bi).
+- [x] Aviso de conteúdo na primeira abertura.
+- [x] Painel dev (10 toques na versão): semente, dar dinheiro, avançar N semanas, ver variáveis ocultas, copiar estado.
+- [x] Modelos de issue: bug, ajuste de balanço, ideia.
 
 **Primeiro loop do agiota**
-- [ ] Pedidos semanais com ficha (nome, profissão, valor, motivo, risco oculto).
-- [ ] Aceitar com taxa e prazo, ou recusar.
-- [ ] Parcelas semanais; pagamento ou atraso conforme risco e taxa (juro mais alto → mais atraso).
-- [ ] Calote depois de N semanas sem pagar; resumo semanal no Jornal.
+- [x] Pedidos semanais com ficha (nome, profissão, valor, motivo, risco oculto).
+- [x] Aceitar com taxa e prazo, ou recusar.
+- [x] Parcelas semanais; pagamento ou atraso conforme risco e taxa (juro mais alto → mais atraso).
+- [x] Calote depois de N semanas sem pagar; resumo semanal no Jornal.
 
 **Pronto quando:** você instala pelo link no Android, joga 10 semanas emprestando e cobrando, fecha o app, reabre e a partida continua.
 
