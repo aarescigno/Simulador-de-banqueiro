@@ -1,6 +1,6 @@
 # Roadmap
 
-Ordem de execução, do alicerce ao jogo completo. Cada marco termina jogável e testado; não se começa o próximo sem jogar o anterior. Detalhes de design em [`GDD.md`](GDD.md).
+Ordem de execução, do alicerce ao jogo completo. A etapa em curso está em [`PROXIMA-SESSAO.md`](PROXIMA-SESSAO.md). Cada marco termina jogável e testado; não se começa o próximo sem jogar o anterior. Detalhes de design em [`GDD.md`](GDD.md).
 
 ## Pré-requisitos (no GitHub, antes da próxima sessão)
 
@@ -8,9 +8,9 @@ Ordem de execução, do alicerce ao jogo completo. Cada marco termina jogável e
 - [x] Tornar o repositório público.
 - [x] Em Settings → Pages, escolher "Source: GitHub Actions".
 
-## Marco 0 — Fundação + primeiro loop (próxima sessão)
+## Marco 0 — Fundação + primeiro loop (concluído)
 
-Objetivo: o jogo instalado no celular, com um loop mínimo do agiota para "sentir" o ritmo. Briefing detalhado em [`PROXIMA-SESSAO.md`](PROXIMA-SESSAO.md).
+Objetivo: o jogo instalado no celular, com um loop mínimo do agiota para "sentir" o ritmo. Histórico em [`LOG.md`](LOG.md).
 
 **Fundação**
 - [x] Projeto TypeScript + Vite + Preact, ESLint e Prettier.
@@ -37,7 +37,7 @@ Objetivo: o jogo instalado no celular, com um loop mínimo do agiota para "senti
 Objetivo: provar que o jogo é divertido antes de construir o resto.
 
 **1a. Agiota**
-- [ ] Garantias (celular, moto, cartão do INSS retido) e negociação nos pedidos.
+- [x] Garantias (celular, moto, cartão do INSS retido) e negociação nos pedidos.
 - [ ] Política de cobrança em 3 níveis com exceções por devedor; medo e boca a boca.
 - [ ] Atenção policial (faixa), denúncia, investigação.
 - [ ] Bolso com 3 compartimentos e retiradas.

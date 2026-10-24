@@ -5,9 +5,10 @@ Jogo de gestão em turnos, no navegador e instalável no celular: comece como ag
 - [Documento de design](docs/GDD.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Briefing da próxima sessão](docs/PROXIMA-SESSAO.md)
+- [Diário de sessões](docs/LOG.md)
 - [Referência: como um banco ganha dinheiro](docs/referencia/como-um-banco-ganha-dinheiro.md)
 
-Status: Marco 0 (fundação + primeiro loop do agiota) concluído; o Marco 1 é o próximo passo.
+Status: Marco 1a em andamento. Garantias e negociação prontas; a próxima etapa está em [`docs/PROXIMA-SESSAO.md`](docs/PROXIMA-SESSAO.md).
 
 ## Desenvolvimento
 

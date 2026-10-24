@@ -8,6 +8,7 @@ Jogo de gestão bancária em turnos, no navegador, em português. Antes de qualq
 - Antes de abrir PR: `typecheck`, testes e build passando.
 - Feedback chega por issues; trabalhe a partir delas quando houver.
 - Ao terminar um item do roadmap, marque o checkbox no mesmo PR.
+- Toda sessão segue o protocolo de `docs/PROXIMA-SESSAO.md`: no mesmo PR, acrescenta a entrada no topo de `docs/LOG.md` e reescreve a "Próxima etapa" do briefing. Depois do CI verde, a sessão faz o merge.
 
 ## Código
 
