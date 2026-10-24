@@ -88,16 +88,20 @@ export const titles = { m: 'Seu', f: 'Dona' } as const;
 export interface Profession {
   name: { m: string; f: string };
   risk: number;
+  /** Chance de ter moto, se diferente da padrão. */
+  moto?: number;
+  /** Recebe benefício do INSS. */
+  inss?: boolean;
 }
 
 export const professions: Profession[] = [
   { name: { m: 'pedreiro', f: 'diarista' }, risk: 0.05 },
-  { name: { m: 'motorista de aplicativo', f: 'motorista de aplicativo' }, risk: 0.08 },
-  { name: { m: 'entregador', f: 'entregadora' }, risk: 0.1 },
+  { name: { m: 'motorista de aplicativo', f: 'motorista de aplicativo' }, risk: 0.08, moto: 0.05 },
+  { name: { m: 'entregador', f: 'entregadora' }, risk: 0.1, moto: 0.9 },
   { name: { m: 'camelô', f: 'camelô' }, risk: 0.08 },
   { name: { m: 'dono de bar', f: 'dona de bar' }, risk: 0.04 },
   { name: { m: 'cabeleireiro', f: 'cabeleireira' }, risk: 0.0 },
-  { name: { m: 'aposentado', f: 'aposentada' }, risk: -0.12 },
+  { name: { m: 'aposentado', f: 'aposentada' }, risk: -0.12, moto: 0.05, inss: true },
   { name: { m: 'servidor da prefeitura', f: 'servidora da prefeitura' }, risk: -0.15 },
   { name: { m: 'vigia', f: 'merendeira' }, risk: -0.05 },
   { name: { m: 'desempregado', f: 'desempregada' }, risk: 0.25 },

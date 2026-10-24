@@ -25,3 +25,36 @@ describe('jornal', () => {
     ]);
   });
 });
+
+describe('jornal: garantias e negociação', () => {
+  it('conta a garantia, a venda no calote e quem foi embora', () => {
+    const lines = reportLines({
+      week: 9,
+      cash: 10_000,
+      events: [
+        {
+          type: 'defaulted',
+          name: 'Rafael',
+          writtenOff: 400,
+          recovered: 2_500,
+          collateral: 'moto',
+        },
+        {
+          type: 'loanMade',
+          name: 'Dona Rosa',
+          amount: 1_000,
+          monthlyRate: 15,
+          weeks: 8,
+          collateral: 'inss',
+        },
+        { type: 'walkedOut', name: 'Seu Jorge' },
+      ],
+    });
+    expect(lines).toEqual([
+      'Rafael não paga há 4 semanas. Moto recolhida e vendida: R$ 2,5 mil. Baixado: R$ 400.',
+      'Emprestado a Dona Rosa: R$ 1 mil a 15% ao mês, 8 semanas. Garantia: o cartão do INSS.',
+      'Seu Jorge não topou a taxa. Foi pedir a outro.',
+      'Caixa: R$ 10 mil.',
+    ]);
+  });
+});

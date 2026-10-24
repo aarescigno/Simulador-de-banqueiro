@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export interface Debtor {
   /** Nome completo, para a ficha. */
@@ -9,6 +9,20 @@ export interface Debtor {
   profession: string;
 }
 
+export type CollateralKind = 'celular' | 'moto' | 'inss';
+
+export interface Collateral {
+  kind: CollateralKind;
+  /** Valor de revenda; no cartão do INSS, o benefício mensal. */
+  value: number;
+}
+
+/** Contraproposta do devedor: a maior taxa que topa com aquela garantia. */
+export interface Counter {
+  rate: number;
+  collateral: CollateralKind | null;
+}
+
 export interface LoanRequest {
   id: number;
   week: number;
@@ -17,6 +31,13 @@ export interface LoanRequest {
   reason: string;
   /** Risco oculto, de 0 a 1. */
   risk: number;
+  /** O que o devedor tem para deixar em garantia. */
+  assets: Collateral[];
+  /** Oculto: maior taxa (% ao mês) que topa sem garantia. */
+  maxRate: number;
+  /** Oculto: quantas contrapropostas ainda faz antes de ir embora. */
+  patience: number;
+  counter?: Counter;
 }
 
 export interface Loan {
@@ -37,6 +58,9 @@ export interface Loan {
   missedStreak: number;
   /** Oculto: o devedor quebrou e quase não paga mais. */
   broke: boolean;
+  collateral: Collateral | null;
+  /** Quanto a garantia rendeu depois do calote. */
+  recovered: number;
   status: 'active' | 'paid' | 'defaulted';
   endWeek?: number;
 }
@@ -45,13 +69,27 @@ export interface Loan {
 export type GameEvent =
   | { type: 'gameStarted' }
   | { type: 'devMoney'; amount: number }
-  | { type: 'loanMade'; name: string; amount: number; monthlyRate: number; weeks: number }
+  | {
+      type: 'loanMade';
+      name: string;
+      amount: number;
+      monthlyRate: number;
+      weeks: number;
+      collateral: CollateralKind | null;
+    }
   | { type: 'refused'; name: string }
+  | { type: 'walkedOut'; name: string }
   | { type: 'expired'; name: string }
   | { type: 'paid'; name: string; amount: number }
   | { type: 'missed'; name: string; streak: number }
   | { type: 'settled'; name: string; profit: number }
-  | { type: 'defaulted'; name: string; writtenOff: number };
+  | {
+      type: 'defaulted';
+      name: string;
+      writtenOff: number;
+      recovered: number;
+      collateral: CollateralKind | null;
+    };
 
 /** Evento agendado para uma semana futura. */
 export interface ScheduledEvent {
@@ -69,6 +107,8 @@ export interface Stats {
   lent: number;
   received: number;
   writtenOff: number;
+  /** Recebido com a venda de garantias. */
+  recovered: number;
 }
 
 export interface GameState {

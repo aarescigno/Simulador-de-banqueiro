@@ -1,16 +1,18 @@
-// Relatório rápido de balanço: npx vite-node sim/balance.ts
+// Relatório rápido de balanço: npx vite-node sim/balance.ts (COLLATERAL=1 para exigir garantia)
 import { newGame } from '../src/engine';
 import { playBot } from './bot';
 
 const RUNS = Number(process.env.RUNS ?? 100);
 const WEEKS = 30;
+/** COLLATERAL=1: o bot exige a garantia mais forte. */
+const collateral = process.env.COLLATERAL === '1';
 for (const monthlyRate of (process.env.RATES ?? '5,10,20,30,50,80').split(',').map(Number)) {
   for (const weeks of (process.env.TERMS ?? '4,8,16').split(',').map(Number)) {
     let wealth = 0;
     let loans = 0;
     let defaults = 0;
     for (let seed = 1; seed <= RUNS; seed++) {
-      const s = playBot(newGame(seed), WEEKS, { monthlyRate, weeks });
+      const s = playBot(newGame(seed), WEEKS, { monthlyRate, weeks, collateral });
       // Valor contábil conservador: o que falta receber, limitado ao principal, só de quem está em dia.
       wealth +=
         s.cash +

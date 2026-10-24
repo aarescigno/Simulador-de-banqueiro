@@ -4,8 +4,23 @@ const PREFIX = 'AGIOTA-SA:';
 
 type Migration = (old: Record<string, unknown>) => Record<string, unknown>;
 
+type Obj = Record<string, unknown>;
+
 /** migrations[n] leva um save da versão n para n + 1. */
-const migrations: Record<number, Migration> = {};
+const migrations: Record<number, Migration> = {
+  // 1 → 2: garantias e negociação. Pedidos antigos aceitam qualquer taxa e só têm o celular.
+  1: (old) => ({
+    ...old,
+    requests: (old.requests as Obj[]).map((r) => ({
+      ...r,
+      assets: [{ kind: 'celular', value: 800 }],
+      maxRate: 100,
+      patience: 1,
+    })),
+    loans: (old.loans as Obj[]).map((l) => ({ ...l, collateral: null, recovered: 0 })),
+    stats: { ...(old.stats as Obj), recovered: 0 },
+  }),
+};
 
 export class SaveError extends Error {}
 

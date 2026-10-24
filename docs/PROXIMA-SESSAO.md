@@ -1,34 +1,30 @@
-# Briefing da próxima sessão — Marco 0
+# Briefing da próxima sessão
 
-Para começar, basta abrir uma sessão neste repositório e dizer: **"Leia `docs/PROXIMA-SESSAO.md` e execute o Marco 0."**
+Para começar, basta abrir uma sessão neste repositório e dizer: **"Leia `docs/PROXIMA-SESSAO.md` e execute a próxima etapa."**
 
 ## Contexto em 30 segundos
 
-**Agiota S.A.** é um jogo de gestão em turnos, no navegador, sobre como os bancos ganham dinheiro, em tom de sátira seca. O jogador começa como agiota e sobe até conglomerado; o placar é o patrimônio pessoal protegido. Design completo em [`GDD.md`](GDD.md); ordem de execução em [`ROADMAP.md`](ROADMAP.md); convenções em [`../CLAUDE.md`](../CLAUDE.md).
+**Agiota S.A.** é um jogo de gestão em turnos, no navegador, sobre como os bancos ganham dinheiro, em tom de sátira seca. O jogador começa como agiota e sobe até conglomerado; o placar é o patrimônio pessoal protegido. Design em [`GDD.md`](GDD.md); ordem de execução em [`ROADMAP.md`](ROADMAP.md); convenções em [`../CLAUDE.md`](../CLAUDE.md); histórico em [`LOG.md`](LOG.md).
 
-## Entregas, em PRs pequenos para a `main`
+## Próxima etapa
 
-Cada PR deve terminar com build, typecheck e testes passando, e com o jogo funcionando no link do GitHub Pages depois do merge.
+**Marco 1a — política de cobrança em 3 níveis com exceções por devedor; medo e boca a boca.** Especificação no GDD, seção 16 ("Cobrança por política"). Pontos que já se sabem:
 
-1. **Scaffold + CI + deploy.** Vite + TypeScript + Preact, ESLint/Prettier, Vitest, workflow de CI (typecheck, testes, build) e workflow de deploy no Pages na `main`. Caminho base relativo. Uma tela "Agiota S.A." com o número da versão.
-2. **PWA.** vite-plugin-pwa, manifesto (nome, ícone SVG, cores do tema terminal), offline, aviso "Nova versão — atualizar" com `registerType: 'prompt'`. A versão vem do `package.json` + hash curto do commit.
-3. **Motor e save.** `src/engine/`: tipo `GameState` (com `saveVersion`), `step(state, decisions, rng)`, RNG com semente (ex.: mulberry32), fila de eventos. Autosave em `localStorage` a cada turno; exportar/importar como texto. Testes: determinismo (mesma semente → mesmo resultado) e ida e volta do save.
-4. **Casca da interface.** Menu principal (continuar, nova partida, versão). Aviso de conteúdo na primeira abertura, com CVV 188. Cinco abas na barra inferior (Resumo, Carteira, Políticas, Bolso, Jornal), tema terminal, fonte mono nos números, formatação `R$ 20 mil` / `R$ 1,2 bi`. Ícones Lucide.
-5. **Painel dev.** Aparece ao tocar 10 vezes no número da versão do menu principal. Funções: ver e trocar a semente, dar dinheiro, avançar N semanas, ver as variáveis ocultas, **copiar estado** (semente + turno + save) para a área de transferência.
-6. **Primeiro loop do agiota.**
-   - R$ 20 mil iniciais; turno = 1 semana.
-   - 1 a 3 pedidos por semana, cada um com ficha gerada (nome, profissão, valor, motivo, risco oculto de 0 a 1). Nomes e textos em `src/content/`.
-   - O jogador aceita definindo taxa (% ao mês) e prazo (semanas), ou recusa.
-   - Parcelas semanais. A chance de pagar cai com o risco do devedor e com a taxa cobrada (direção realista; números ajustáveis num arquivo de parâmetros).
-   - Depois de 4 semanas sem pagar, o empréstimo vira calote e o saldo é baixado.
-   - Resumo semanal no Jornal, em tom seco ("Seu Jorge pagou. Dona Cida não. Caixa: R$ 23,4 mil.").
-   - Teste: um bot simples joga 50 semanas sem quebrar o motor.
-7. **Modelos de issue.** `.github/ISSUE_TEMPLATE/` com bug (inclui campo "estado copiado"), ajuste de balanço e ideia.
+- Três níveis: conversa, pressão (ligar no trabalho, na família), "mandar o primo". Regra padrão por semana de atraso, editável na aba Políticas; exceção por devedor na Carteira (escalar já ou perdoar).
+- Cada nível aumenta o pagamento, o medo e a chance de denúncia. O medo é visível e sobe a taxa de pagamento de todos; o boca a boca atrai pedidos e atenção.
+- Dar ao uso de garantia um custo: tomar a moto ou reter o cartão do INSS mexe em medo e boca a boca (ver "Para observar" na última entrada do log).
+- A atenção policial em si é o item seguinte do roadmap; aqui só se acumula o que vai alimentá-la.
 
-## Fora do escopo desta sessão
+## Protocolo de toda sessão
 
-Cobrança em níveis, medo, polícia, bolso, eventos narrativos e ESC. Ficam para o Marco 1, na ordem do roadmap.
+1. Ler `CLAUDE.md`, `docs/GDD.md`, `docs/ROADMAP.md` e a entrada mais recente de `docs/LOG.md`.
+2. Ver as issues abertas no GitHub. Bug ou ajuste de balanço aberto tem prioridade sobre o roadmap; ideia fica registrada para o marco certo.
+3. Executar **um** item do roadmap (a "Próxima etapa" acima), pequeno e jogável. Regra nova do motor ganha teste; mudou o save, sobe `SAVE_VERSION` com migração.
+4. Rodar `npm run typecheck`, `npm run lint`, `npm test` e `npm run build`. Conferir a tela em 360 px.
+5. No mesmo PR: marcar o checkbox no `ROADMAP.md`, acrescentar a entrada no topo do `LOG.md` e reescrever a seção "Próxima etapa" deste arquivo para o item seguinte.
+6. Abrir o PR para a `main`, esperar o CI passar e fazer o merge. O merge publica no GitHub Pages.
+7. Dizer ao dono o que testar no celular e qual é a próxima etapa.
 
-## Critério de pronto
+## Critério de pronto de cada etapa
 
-Instalar pelo link no Android, jogar 10 semanas emprestando e recebendo, fechar o app, reabrir e continuar a mesma partida. O painel dev abre com 10 toques e copia o estado.
+CI verde, merge feito, jogo funcionando no link do Pages, log e briefing atualizados.

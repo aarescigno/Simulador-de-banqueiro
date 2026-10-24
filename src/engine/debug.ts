@@ -11,7 +11,9 @@ export function hiddenVariables(state: GameState) {
     queue: state.queue.length,
     devUsed: state.devUsed,
     stats: state.stats,
-    requests: state.requests.map((r) => `${r.debtor.short}: risco ${r.risk}`),
+    requests: state.requests.map(
+      (r) => `${r.debtor.short}: risco ${r.risk}, topa até ${r.maxRate}%, paciência ${r.patience}`,
+    ),
     loans: state.loans
       .filter((l) => l.status === 'active')
       .map(

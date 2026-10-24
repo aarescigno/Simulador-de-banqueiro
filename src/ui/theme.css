@@ -379,6 +379,24 @@ input[type='range'] {
 .grow-btn {
   flex: 1;
 }
+.stack.tight {
+  gap: 6px;
+}
+.chip {
+  font: inherit;
+  font-size: 13px;
+  background: transparent;
+  color: var(--dim);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 6px 12px;
+  min-height: 36px;
+  cursor: pointer;
+}
+.chip.on {
+  border-color: var(--amber);
+  color: var(--amber);
+}
 .loan {
   display: flex;
   flex-direction: column;

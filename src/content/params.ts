@@ -39,6 +39,48 @@ export const params = {
     /** Semanas seguidas sem pagar até virar calote. */
     defaultAfterWeeks: 4,
   },
+
+  /**
+   * Negociação: cada devedor tem uma taxa máxima oculta, que sobe com o risco (quem está
+   * desesperado topa qualquer coisa; quem tem opção pechincha). Acima dela, faz contraproposta.
+   */
+  negotiation: {
+    /** Taxa máxima sem garantia: base + risco × peso + sorteio em [0, spread). */
+    base: 12,
+    riskWeight: 45,
+    spread: 30,
+    /** Contrapropostas antes de ir pedir a outro: sorteio entre min e max. */
+    patience: [1, 2] as const,
+  },
+
+  /**
+   * Garantias. Quem deixa garantia paga mais (tem o que perder) e topa menos juro.
+   * ratePenalty: pontos de taxa a menos que o devedor aceita ao deixar a garantia.
+   * payBonus: soma na chance semanal de pagar. recovery: fração do valor recuperada no calote.
+   */
+  collateral: {
+    celular: { ratePenalty: 5, payBonus: 0.03, recovery: 0.4, value: [400, 1_500] as const },
+    moto: {
+      ratePenalty: 15,
+      payBonus: 0.06,
+      /** Moto sem documento sai pela metade da metade. */
+      recovery: 0.3,
+      value: [3_000, 9_000] as const,
+      /** Chance de ter moto, quando a profissão não diz outra. */
+      chance: 0.15,
+    },
+    /**
+     * Cartão do benefício retido: o agiota saca direto. Paga mesmo quando o devedor quebrou;
+     * no calote, o banco bloqueia o cartão e não se recupera nada.
+     */
+    inss: {
+      ratePenalty: 18,
+      payBonus: 0.15,
+      recovery: 0,
+      brokePay: 0.7,
+      value: [1_500, 2_800] as const,
+    },
+  },
 };
 
 export const WEEKS_PER_MONTH = 52 / 12;
