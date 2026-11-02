@@ -19,6 +19,9 @@ npm run typecheck
 npm test
 npm run build
 npm run sim        # balanço: patrimônio e calote por taxa e prazo
+ferramentas/testar.sh [--tudo]   # typecheck, lint, testes e build, uma linha cada
 ```
+
+Ferramentas para sessões do Claude Code (ler pouco, gastar pouco): `ferramentas/indice.sh` (seções dos docs), `ferramentas/mapa.sh` (funções do código), `ferramentas/anota.py` e `ferramentas/arquiva.py` (log sem reler). Regras em `CLAUDE.md`.
 
 Painel dev: no menu, toque 10 vezes no número da versão.
