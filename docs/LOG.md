@@ -2,7 +2,27 @@
 
 Registro de cada sessão de trabalho, da mais nova para a mais antiga. Toda sessão acrescenta uma entrada no mesmo PR da entrega, antes do merge, seguindo [`PROXIMA-SESSAO.md`](PROXIMA-SESSAO.md).
 
-Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisões tomadas; pendências e pontos de balanço para observar; próximo passo.
+Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisões tomadas; pendências e pontos de balanço para observar; próximo passo; linha **Modelo:** (o usado e por quê). Entrada nova com `python3 ferramentas/anota.py docs/LOG.md`, sem reler o arquivo.
+
+---
+
+## 2026-11-02 · Fluxo de trabalho · Kit de economia de sessões · PR #3
+
+**Feito**
+- Incorporado o kit neutro, adaptado ao fluxo que já existia: `ROADMAP.md`, `LOG.md`, `PROXIMA-SESSAO.md` e as issues continuam sendo a fonte. Os docs paralelos do kit (`PLANO`, `PROPOSTAS`, `RESUMO`, `entregas/`) não entraram, para não duplicar.
+- `ferramentas/`: `testar.sh` + `testes.txt` (typecheck, lint, testes e build, uma linha cada; `--tudo` roda o `sim`), `indice.sh` (seções dos docs com as linhas), `mapa.sh` (funções do código), `anota.py` (entrada no topo do log sem reler) e `arquiva.py` (mover seções entre docs).
+- `.claude/settings.json` bloqueia o Read de `node_modules`, `dist`, `dev-dist`, `coverage` e lockfile.
+- `CLAUDE.md` ganhou **Economia** e **Modelo e esforço** (Opus planeja, Sonnet/Haiku executam; conferência de abertura). O protocolo do briefing deixa de mandar ler o GDD inteiro: lê só a seção da etapa.
+- `docs/ENXUGAR.md`: roteiro para quando os docs incharem.
+
+**Decisões**
+- A "Próxima etapa" termina com a linha **Modelo:**. O Marco 1a (cobrança) ainda tem números em aberto: fica "planejar com o Opus antes".
+- O CI segue com os passos separados (log mais claro); o `testar.sh` é para as sessões.
+
+**Próximo passo**
+- Sessão curta com o Opus para fechar os números da cobrança no briefing; depois o Sonnet executa.
+
+Modelo: Opus — mudança de processo e decisão de como encaixar o kit.
 
 ---
 

@@ -294,7 +294,8 @@ Uma condenação no degrau 1 fecha a porta dos degraus regulados (3+) para o seu
 - Cada entrega é um PR pequeno para a `main` (uma fatia jogável por vez, ex.: "pedidos de empréstimo").
 - O merge na `main` publica no GitHub Pages; o teste é feito no celular Android, com o jogo instalado pelo navegador. Não há preview por PR: a `main` é o ambiente de teste.
 - Feedback chega por issues do GitHub com modelos (bug, ajuste de balanço, ideia), fáceis de preencher no celular, de preferência com o estado copiado do painel dev. As sessões seguintes trabalham a partir das issues abertas.
-- Antes de cada PR: testes do motor, typecheck e build passando.
+- Antes de cada PR: `ferramentas/testar.sh` verde (typecheck, lint, testes e build).
+- Custo: o Opus planeja (fecha números e textos da etapa), o Sonnet ou o Haiku executam; docs lidos por seção. Regras no `CLAUDE.md`.
 
 ## 18. Perguntas em aberto
 

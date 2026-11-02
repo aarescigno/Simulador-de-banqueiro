@@ -1,0 +1,8 @@
+# Comandos que o ferramentas/testar.sh roda, um por linha, a partir da raiz do projeto.
+# Linhas com "tudo:" na frente só rodam com --tudo (os lentos). Comentários começam com #.
+# Cada comando deve sair com 0 quando passa; o testar.sh mostra só a última linha da saída.
+npm run typecheck --silent
+npm run lint --silent
+npm test --silent
+npm run build --silent
+tudo: npm run sim --silent
