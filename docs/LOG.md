@@ -6,6 +6,24 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-08 · Marco 1a · Plano da cobrança, medo e boca a boca · PR #4
+
+**Feito**
+- Fechados os números da política de cobrança no briefing: efeito de cada nível (pagamento, quebra, medo, boca a boca, denúncia), medo e boca a boca como indicadores 0–100 com decaimento, custo das garantias, perdão, formato do save 3, telas, textos, testes e alvos do `sim`. Sem código.
+
+**Decisões**
+- Medo e boca a boca puxam em sentidos opostos: medo faz todo mundo pagar e afasta quem tem opção; boca a boca traz pedidos (e, no próximo item, atenção). Violência sobe o medo e derruba o boca a boca.
+- `defaultAfterWeeks` sobe de 4 para 6, para a regra padrão (conversa 1ª, pressão 2ª, primo 4ª) ter vez.
+- Denúncia só acumula num contador; a faixa de atenção policial é o próximo item.
+- Garantia deixa de dominar: alvo de no máximo +20% de patrimônio (hoje +40%), com custo em boca a boca e denúncia.
+
+**Próximo passo**
+- Executar o plano da "Próxima etapa" com o Sonnet.
+
+Modelo: Opus, esforço alto — planejamento de balanço (a regra pede Opus, médio ou alto).
+
+---
+
 ## 2026-11-02 · Fluxo de trabalho · Kit de economia de sessões · PR #3
 
 **Feito**
