@@ -1,6 +1,13 @@
 // Bot simples: aceita todo pedido que cabe no caixa, sempre com a mesma taxa e prazo.
 // Se o devedor contrapropõe, topa a contraproposta (ou não, conforme a opção).
-import { canAccept, decide, step, type CollateralKind, type GameState } from '../src/engine';
+import {
+  canAccept,
+  decide,
+  step,
+  type CollateralKind,
+  type CollectionPolicy,
+  type GameState,
+} from '../src/engine';
 
 export interface BotOptions {
   monthlyRate: number;
@@ -11,7 +18,17 @@ export interface BotOptions {
   takeCounter?: boolean;
   /** Exige a garantia mais forte que o devedor tiver. */
   collateral?: boolean;
+  /** Política de cobrança; padrão do jogo se omitida. */
+  policy?: CollectionPolicy;
 }
+
+/** Políticas de cobrança do sim (POLICY=...). */
+export const policies: Record<string, CollectionPolicy> = {
+  nada: { conversa: null, pressao: null, primo: null },
+  conversa: { conversa: 1, pressao: null, primo: null },
+  padrao: { conversa: 1, pressao: 2, primo: 4 },
+  primo: { conversa: null, pressao: null, primo: 1 },
+};
 
 const strongest: CollateralKind[] = ['inss', 'moto', 'celular'];
 
@@ -38,6 +55,7 @@ export function botDecide(state: GameState, o: BotOptions): GameState {
 
 export function playBot(start: GameState, weeks: number, o: BotOptions): GameState {
   let s = start;
+  if (o.policy) s = decide(s, { type: 'setPolicy', collection: o.policy });
   for (let i = 0; i < weeks; i++) s = step(botDecide(s, o)).state;
   return s;
 }

@@ -1,4 +1,5 @@
 import { receivable, step } from '../../engine';
+import { collection } from '../../content/params';
 import { money } from '../../content/format';
 import { reportLines } from '../../content/journal';
 import { ui } from '../../content/ui';
@@ -7,6 +8,8 @@ import type { TabProps } from '../Game';
 export function Summary({ state, update, goTo }: TabProps) {
   const last = state.journal[state.journal.length - 1];
   const active = state.loans.filter((l) => l.status === 'active');
+  const before = state.journal[state.journal.length - 2];
+  const prev = { fear: before?.fear ?? 0, word: before?.word ?? collection.word.start };
   const late = active.filter((l) => l.missedStreak > 0).length;
 
   return (
@@ -21,6 +24,21 @@ export function Summary({ state, update, goTo }: TabProps) {
           label={ui.summary.writtenOff}
           value={money(state.stats.writtenOff)}
           tone={state.stats.writtenOff ? 'red' : ''}
+        />
+      </div>
+
+      <div class="meters">
+        <Meter
+          label={ui.meters.fear.name}
+          text={ui.meters.fear.text}
+          value={state.fear}
+          before={prev.fear}
+        />
+        <Meter
+          label={ui.meters.word.name}
+          text={ui.meters.word.text}
+          value={state.word}
+          before={prev.word}
         />
       </div>
 
@@ -51,6 +69,30 @@ export function Stat({ label, value, tone }: { label: string; value: string; ton
     <div class="stat">
       <span class="dim small">{label}</span>
       <span class={`mono big ${tone ?? ''}`}>{value}</span>
+    </div>
+  );
+}
+
+function Meter({
+  label,
+  text,
+  value,
+  before,
+}: {
+  label: string;
+  text: string;
+  value: number;
+  before: number;
+}) {
+  const delta = Math.round(value) - Math.round(before);
+  const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '';
+  return (
+    <div class="meter">
+      <span class="dim small">{label}</span>
+      <span class="mono big">
+        {Math.round(value)} <span class="small dim">{arrow}</span>
+      </span>
+      <span class="dim small">{text}</span>
     </div>
   );
 }

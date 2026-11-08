@@ -47,11 +47,11 @@ function withRequest(patch: Partial<LoanRequest>): GameState {
 }
 
 describe('pedidos', () => {
-  it('chegam de 1 a 3 por semana, com ficha completa', () => {
+  it('chegam de 1 a 5 por semana, com ficha completa', () => {
     let s = newGame(5);
     for (let i = 0; i < 30; i++) {
       expect(s.requests.length).toBeGreaterThanOrEqual(params.requests.perWeek[0]);
-      expect(s.requests.length).toBeLessThanOrEqual(params.requests.perWeek[1]);
+      expect(s.requests.length).toBeLessThanOrEqual(params.requests.maxTotal);
       for (const r of s.requests) {
         expect(r.debtor.short).toBeTruthy();
         expect(r.debtor.profession).toBeTruthy();
@@ -197,7 +197,7 @@ describe('garantias', () => {
     const events: GameEvent[] = [];
     const state = { ...s, stats: { ...s.stats } };
     for (let w = 1; w <= params.payment.defaultAfterWeeks; w++) {
-      collect({ ...state, week: s.week + w }, loan, fixedRng(0.999), events);
+      collect({ ...state, week: s.week + w }, loan, fixedRng(1), events);
     }
     const recovered = Math.round(800 * params.collateral.moto.recovery);
     expect(loan.status).toBe('defaulted');
@@ -215,7 +215,7 @@ describe('garantias', () => {
     const loan = s.loans[0]!;
     const events: GameEvent[] = [];
     for (let w = 1; w <= params.payment.defaultAfterWeeks; w++) {
-      collect({ ...s, week: s.week + w }, loan, fixedRng(0.999), events);
+      collect({ ...s, week: s.week + w }, loan, fixedRng(1), events);
     }
     expect(loan.recovered).toBe(loan.totalDue);
     expect(events.at(-1)).toMatchObject({ writtenOff: 0 });
@@ -225,7 +225,7 @@ describe('garantias', () => {
     const s = withLoan(0.5, 20, 4, { kind: 'inss', value: 2_000 });
     const loan = s.loans[0]!;
     for (let w = 1; w <= params.payment.defaultAfterWeeks; w++) {
-      collect({ ...s, week: s.week + w }, loan, fixedRng(0.999), []);
+      collect({ ...s, week: s.week + w }, loan, fixedRng(1), []);
     }
     expect(loan.status).toBe('defaulted');
     expect(loan.recovered).toBe(0);
@@ -267,7 +267,7 @@ describe('parcelas', () => {
     const s = withLoan(0.5);
     const loan = s.loans[0]!;
     const events: GameEvent[] = [];
-    const rng = fixedRng(0.999);
+    const rng = fixedRng(1);
     for (let w = 1; w <= params.payment.defaultAfterWeeks; w++) {
       collect({ ...s, week: s.week + w }, loan, rng, events);
     }

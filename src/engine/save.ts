@@ -1,3 +1,4 @@
+import { collection } from '../content/params';
 import { SAVE_VERSION, type GameState } from './state';
 
 const PREFIX = 'AGIOTA-SA:';
@@ -19,6 +20,17 @@ const migrations: Record<number, Migration> = {
     })),
     loans: (old.loans as Obj[]).map((l) => ({ ...l, collateral: null, recovered: 0 })),
     stats: { ...(old.stats as Obj), recovered: 0 },
+  }),
+  // 2 → 3: cobrança por política, medo e boca a boca.
+  2: (old) => ({
+    ...old,
+    fear: 0,
+    word: 30,
+    complaints: 0,
+    policy: { collection: { ...collection.defaultPolicy } },
+    loans: (old.loans as Obj[]).map((l) => ({ ...l, override: null, lastLevel: null })),
+    stats: { ...(old.stats as Obj), forgiven: 0 },
+    journal: (old.journal as Obj[]).map((r) => ({ ...r, fear: 0, word: 30 })),
   }),
 };
 
