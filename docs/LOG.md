@@ -6,6 +6,31 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-08 · Marco 1a · Cobrança em 3 níveis, medo e boca a boca · PR #5
+
+**Feito**
+- Política de cobrança (conversa, pressão, primo) com limiar por nível e exceção por devedor; `levelFor`, efeitos dentro de `collect`, `forgive`; decisões `setPolicy`, `setOverride`, `forgive`.
+- Medo e boca a boca no estado, com decaimento; pedidos por semana leem o boca a boca e o risco de quem pede lê o medo; denúncias como contador e eventos no Jornal.
+- Save versão 3 com migração 2→3; `defaultAfterWeeks` 4→6; `WeekReport` ganha `fear` e `word`.
+- Telas: Políticas (seletor por nível), Carteira (nível da semana, chips Regra/Conversa/Pressão/Primo, Perdoar com confirmação), Resumo (medo e boca com setinha), painel dev. Conferido em 360 px.
+- Testes do motor (`tests/cobranca.test.ts`, migração) e `sim` com `POLICY=nada|conversa|padrao|primo` e colunas de medo, boca e denúncias.
+
+**Decisões**
+- Medo fixado no começo da semana (`collect` recebe `fear`), para a ordem dos devedores não importar.
+- Valores finais que diferem do plano, ajustados pela ordem do briefing: `perWeek` divisor 40→50 (boca a boca de quem não cobra disparava para 85); pressão: medo +1, boca −0,5; primo: pagar +0,42, pagar se quebrou +0,18, medo +2,8; celular tomado: boca −3, denúncia 10%; moto tomada: boca −8, denúncia 30%; cartão do INSS: boca −4 ao fechar, denúncia 2% por semana. `inss.payBonus` e `inss.brokePay` ficaram como estavam.
+- Alvos do sim (20% a.m., 8 sem, 100 rodadas, semana 30), sem garantia: nada 30,8 mil · medo 0 · boca 80 · denúncias 0,0; padrão 38,0 mil · 37 · 24 · 2,8; primo 38,1 mil · 74 · 2 · 7,8. Com garantia: nada 39,4 mil; padrão 43,7 mil (+15%) · medo 35 · boca 12 · denúncias 4,0; primo 44,2 mil. Alvos 1–5 batidos; primo só 0,3% acima do padrão e medo do primo em 74 (teto 75): folga curta.
+
+**Pendências**
+- Balanço fino com o jogo na mão: o boca a boca do primo fica em ~2 (piso); observe se "não vem ninguém" frustra.
+- A denúncia ainda é só contador; a atenção policial é o próximo item.
+
+**Próximo passo**
+- Planejar com o Opus a atenção policial (faixa), denúncia e investigação.
+
+Modelo: Sonnet, esforço médio — plano fechado, com números e alvos do sim.
+
+---
+
 ## 2026-11-08 · Marco 1a · Plano da cobrança, medo e boca a boca · PR #4
 
 **Feito**

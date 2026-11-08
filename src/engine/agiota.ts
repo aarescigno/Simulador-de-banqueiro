@@ -1,15 +1,18 @@
 // Degrau 1: pedidos, empréstimos e parcelas semanais.
-import { params, WEEKS_PER_MONTH } from '../content/params';
+import { collection, params, WEEKS_PER_MONTH } from '../content/params';
 import { firstNames, professions, reasons, surnames, titleChance, titles } from '../content/people';
 import type { Rng } from './rng';
 import type {
   Collateral,
   CollateralKind,
+  CollectionPolicy,
+  ComplaintSource,
   Debtor,
   GameEvent,
   GameState,
   Loan,
   LoanRequest,
+  Level,
 } from './state';
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
@@ -71,42 +74,125 @@ export function makeLoan(state: GameState, req: LoanRequest, terms: LoanTerms): 
     broke: false,
     collateral: collateral && { ...collateral },
     recovered: 0,
+    override: null,
+    lastLevel: null,
     status: 'active',
   };
 }
 
+const levelOrder: Level[] = ['conversa', 'pressao', 'primo'];
+
+/**
+ * Nível de cobrança desta semana. Sem atraso, nenhum. Com atraso, a exceção do devedor vence;
+ * senão vale o nível mais alto cujo limiar já chegou.
+ */
+export function levelFor(
+  policy: { collection: CollectionPolicy },
+  loan: Pick<Loan, 'missedStreak' | 'override'>,
+): Level | null {
+  if (loan.missedStreak < 1) return null;
+  if (loan.override) return loan.override;
+  let level: Level | null = null;
+  for (const l of levelOrder) {
+    const t = policy.collection[l];
+    if (t !== null && t <= loan.missedStreak) level = l;
+  }
+  return level;
+}
+
+export const clampMeter = (x: number) => clamp(x, 0, 100);
+
 /** Chance de o devedor quebrar de vez nesta semana. */
-export function hazard(loan: Pick<Loan, 'risk' | 'monthlyRate'>): number {
+export function hazard(
+  loan: Pick<Loan, 'risk' | 'monthlyRate'>,
+  level: Level | null = null,
+): number {
   const p = params.payment;
-  return p.hazardBase + p.hazardRisk * loan.risk + p.hazardRate * (loan.monthlyRate / 100) ** 2;
+  const extra = level ? collection.levels[level].hazard : 0;
+  return (
+    p.hazardBase + p.hazardRisk * loan.risk + p.hazardRate * (loan.monthlyRate / 100) ** 2 + extra
+  );
+}
+
+/** Contexto da semana que mexe na chance de pagar: nível de cobrança e medo (0 a 100). */
+export interface PayContext {
+  level?: Level | null;
+  fear?: number;
 }
 
 /** Chance de pagar a parcela nesta semana. */
 export function payChance(
   loan: Pick<Loan, 'risk' | 'monthlyRate' | 'broke'> & { collateral?: Collateral | null },
+  { level = null, fear = 0 }: PayContext = {},
 ): number {
   const p = params.payment;
   const kind = loan.collateral?.kind;
-  if (loan.broke) return kind === 'inss' ? params.collateral.inss.brokePay : p.brokePay;
+  const lv = level ? collection.levels[level] : null;
+  if (loan.broke) {
+    const base = kind === 'inss' ? params.collateral.inss.brokePay : p.brokePay;
+    return Math.min(1, base + (lv?.brokePay ?? 0));
+  }
   const bonus = kind ? params.collateral[kind].payBonus : 0;
   return clamp(
-    p.base - p.riskWeight * loan.risk - p.rateWeight * (loan.monthlyRate / 100) + bonus,
+    p.base -
+      p.riskWeight * loan.risk -
+      p.rateWeight * (loan.monthlyRate / 100) +
+      bonus +
+      (lv?.payBonus ?? 0) +
+      collection.fear.payBonus * (fear / 100),
     p.min,
     1,
   );
 }
 
-/** Resolve a semana de um empréstimo ativo. Muta o empréstimo e o estado recebidos (cópias). */
-export function collect(state: GameState, loan: Loan, rng: Rng, events: GameEvent[]): void {
+function complain(
+  state: GameState,
+  rng: Rng,
+  events: GameEvent[],
+  chance: number,
+  source: ComplaintSource,
+  name?: string,
+) {
+  if (chance > 0 && rng.chance(chance)) {
+    state.complaints += 1;
+    events.push({ type: 'complaint', source, name });
+  }
+}
+
+/**
+ * Resolve a semana de um empréstimo ativo. Muta o empréstimo e o estado recebidos (cópias).
+ * `fear` é o medo no começo da semana; o `step` o fixa para que a ordem dos devedores não importe.
+ */
+export function collect(
+  state: GameState,
+  loan: Loan,
+  rng: Rng,
+  events: GameEvent[],
+  fear: number = state.fear,
+): void {
   const age = state.week - loan.startWeek;
   if (loan.status !== 'active' || age < 1) return;
   const owed = Math.min(loan.weeks, age) - loan.paidInstallments;
   if (owed <= 0) return;
 
-  if (!loan.broke && rng.chance(hazard(loan))) loan.broke = true;
   const name = loan.debtor.short;
+  if (loan.collateral?.kind === 'inss') {
+    complain(state, rng, events, collection.inss.complaintPerWeek, 'inss', name);
+  }
 
-  if (rng.chance(payChance(loan))) {
+  const level = levelFor(state.policy, loan);
+  loan.lastLevel = level;
+  if (!loan.broke && rng.chance(hazard(loan, level))) loan.broke = true;
+  const pays = rng.chance(payChance(loan, { level, fear }));
+
+  if (level) {
+    const lv = collection.levels[level];
+    state.fear = clampMeter(state.fear + lv.fear);
+    state.word = clampMeter(state.word + lv.word);
+    if (level !== 'conversa') complain(state, rng, events, lv.complaint, level, name);
+  }
+
+  if (pays) {
     const n = owed > 1 && rng.chance(params.payment.catchUp) ? 2 : 1;
     const amount = Math.min(n * loan.installment, loan.totalDue - loan.totalPaid);
     loan.paidInstallments += n;
@@ -114,10 +200,11 @@ export function collect(state: GameState, loan: Loan, rng: Rng, events: GameEven
     loan.missedStreak = 0;
     state.cash += amount;
     state.stats.received += amount;
-    events.push({ type: 'paid', name, amount });
+    events.push({ type: 'paid', name, amount, level });
     if (loan.paidInstallments >= loan.weeks) {
       loan.status = 'paid';
       loan.endWeek = state.week;
+      state.word = clampMeter(state.word + collection.word.settled);
       events.push({ type: 'settled', name, profit: loan.totalPaid - loan.principal });
     }
     return;
@@ -138,9 +225,28 @@ export function collect(state: GameState, loan: Loan, rng: Rng, events: GameEven
     state.stats.recovered += recovered;
     state.stats.writtenOff += writtenOff;
     events.push({ type: 'defaulted', name, writtenOff, recovered, collateral: c?.kind ?? null });
+    if (c && c.kind !== 'inss') {
+      const cost = collection.seized[c.kind];
+      state.fear = clampMeter(state.fear + cost.fear);
+      state.word = clampMeter(state.word + cost.word);
+      complain(state, rng, events, cost.complaint, c.kind, name);
+    }
   } else {
-    events.push({ type: 'missed', name, streak: loan.missedStreak });
+    events.push({ type: 'missed', name, streak: loan.missedStreak, level });
   }
+}
+
+/** Perdoa a dívida: encerra o empréstimo, o saldo vira perdão, o bairro comenta. Muta o estado (cópia). */
+export function forgive(state: GameState, loanId: number, events: GameEvent[]): void {
+  const loan = state.loans.find((l) => l.id === loanId);
+  if (!loan || loan.status !== 'active') throw new Error('Esse empréstimo não está ativo.');
+  const amount = loan.totalDue - loan.totalPaid;
+  loan.status = 'forgiven';
+  loan.endWeek = state.week;
+  state.stats.forgiven += amount;
+  state.word = clampMeter(state.word + collection.word.forgiven);
+  state.fear = clampMeter(state.fear + collection.forgive.fear);
+  events.push({ type: 'forgiven', name: loan.debtor.short, amount });
 }
 
 const roundTo = (x: number, step: number) => Math.round(x / step) * step;
@@ -183,18 +289,23 @@ function makeDebtor(
 
 /** Pedidos que chegam no começo da semana. */
 export function generateRequests(state: GameState, rng: Rng): LoanRequest[] {
-  const { perWeek, baseRisk, riskClamp } = params.requests;
+  const { perWeek, baseRisk, riskClamp, wordDivisor, maxTotal } = params.requests;
   const neg = params.negotiation;
   const taken = new Set([
     ...state.requests.map((r) => r.debtor.short),
     ...state.loans.filter((l) => l.status === 'active').map((l) => l.debtor.short),
   ]);
-  const count = rng.int(perWeek[0], perWeek[1]);
+  const count = Math.min(
+    maxTotal,
+    rng.int(perWeek[0], perWeek[1]) + Math.floor(state.word / wordDivisor + rng.next()),
+  );
+  const fearRisk = collection.fear.riskBonus * (state.fear / 100);
   const out: LoanRequest[] = [];
   for (let i = 0; i < count; i++) {
     const { debtor, professionRisk, assets } = makeDebtor(rng, taken);
     const reason = rng.pick(reasons);
-    const raw = rng.next() * baseRisk[0] + rng.next() * baseRisk[1] + professionRisk + reason.risk;
+    const raw =
+      rng.next() * baseRisk[0] + rng.next() * baseRisk[1] + professionRisk + reason.risk + fearRisk;
     const amount = roundTo(rng.int(reason.amount[0], reason.amount[1]), 100);
     const risk = Math.round(clamp(raw, riskClamp[0], riskClamp[1]) * 1000) / 1000;
     out.push({

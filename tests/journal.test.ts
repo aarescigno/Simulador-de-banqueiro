@@ -13,6 +13,8 @@ describe('jornal', () => {
     const lines = reportLines({
       week: 3,
       cash: 23_400,
+      fear: 0,
+      word: 30,
       events: [
         { type: 'paid', name: 'Seu Jorge', amount: 350 },
         { type: 'missed', name: 'Dona Cida', streak: 1 },
@@ -31,6 +33,8 @@ describe('jornal: garantias e negociação', () => {
     const lines = reportLines({
       week: 9,
       cash: 10_000,
+      fear: 0,
+      word: 30,
       events: [
         {
           type: 'defaulted',
@@ -51,7 +55,7 @@ describe('jornal: garantias e negociação', () => {
       ],
     });
     expect(lines).toEqual([
-      'Rafael não paga há 4 semanas. Moto recolhida e vendida: R$ 2,5 mil. Baixado: R$ 400.',
+      'Rafael não paga há 6 semanas. Moto recolhida e vendida: R$ 2,5 mil. Baixado: R$ 400.',
       'Emprestado a Dona Rosa: R$ 1 mil a 15% ao mês, 8 semanas. Garantia: o cartão do INSS.',
       'Seu Jorge não topou a taxa. Foi pedir a outro.',
       'Caixa: R$ 10 mil.',

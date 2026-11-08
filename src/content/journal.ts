@@ -1,5 +1,5 @@
 // Texto do Jornal a partir dos eventos do motor. Voz de relatório, frases curtas.
-import type { GameEvent, WeekReport } from '../engine/state';
+import type { ComplaintSource, GameEvent, Level, WeekReport } from '../engine/state';
 import { collateralText } from './collateral';
 import { money, percent } from './format';
 import { params } from './params';
@@ -18,6 +18,29 @@ function ofType<T extends GameEvent['type']>(events: GameEvent[], type: T) {
   return events.filter((e): e is Extract<GameEvent, { type: T }> => e.type === type);
 }
 
+const paidAfter: Record<Level, (names: string, verb: string) => string> = {
+  conversa: (n, v) => `${n} ${v} depois da conversa.`,
+  pressao: (n, v) => `${n} ${v} depois de uma ligação para o trabalho.`,
+  primo: (n, v) => `O primo passou lá ontem. ${n} ${v}.`,
+};
+
+const missedQuote: Record<Level, string> = {
+  conversa: 'Prometeu sexta.',
+  pressao: 'A família já sabe.',
+  primo: 'O primo voltou de mãos vazias.',
+};
+
+const complaintText: Record<ComplaintSource, (name?: string) => string> = {
+  pressao: () => 'Um patrão foi à delegacia reclamar de ligações.',
+  primo: () => 'Boletim de ocorrência por ameaça. O endereço é do seu bairro.',
+  moto: () => 'BO de moto tomada. A placa está no sistema.',
+  celular: () => 'Celular tomado virou queixa na delegacia.',
+  inss: (n) => `A família de ${n} foi ao INSS perguntar pelo cartão do benefício.`,
+  ambiente: () => 'Alguém comentou com a ronda que no bairro todo mundo paga em dia.',
+};
+
+const levels: (Level | null)[] = [null, 'conversa', 'pressao', 'primo'];
+
 export function reportLines(r: WeekReport): string[] {
   const ev = r.events;
   const lines: string[] = [];
@@ -26,16 +49,23 @@ export function reportLines(r: WeekReport): string[] {
     lines.push('Abre o caderninho. Bairro novo, clientela velha.');
 
   const paid = ofType(ev, 'paid');
-  if (paid.length) {
-    const total = paid.reduce((s, e) => s + e.amount, 0);
-    const verb = paid.length === 1 ? 'pagou' : 'pagaram';
-    lines.push(`${joinNames(paid.map((e) => e.name))} ${verb}. Recebido: ${money(total)}.`);
+  for (const level of levels) {
+    const group = paid.filter((e) => (e.level ?? null) === level);
+    if (!group.length) continue;
+    const total = group.reduce((s, e) => s + e.amount, 0);
+    const verb = group.length === 1 ? 'pagou' : 'pagaram';
+    const names = joinNames(group.map((e) => e.name));
+    const head = level ? paidAfter[level](names, verb) : `${names} ${verb}.`;
+    lines.push(`${head} Recebido: ${money(total)}.`);
   }
 
   const missed = ofType(ev, 'missed');
-  if (missed.length) {
-    const verb = missed.length === 1 ? 'não pagou' : 'não pagaram';
-    lines.push(`${joinNames(missed.map((e) => e.name))} ${verb}.`);
+  for (const level of levels) {
+    const group = missed.filter((e) => (e.level ?? null) === level);
+    if (!group.length) continue;
+    const verb = group.length === 1 ? 'não pagou' : 'não pagaram';
+    const quote = level && group.length === 1 ? ` ${missedQuote[level]}` : '';
+    lines.push(`${joinNames(group.map((e) => e.name))} ${verb}.${quote}`);
   }
 
   for (const e of ofType(ev, 'settled')) {
@@ -51,6 +81,12 @@ export function reportLines(r: WeekReport): string[] {
       `${e.name} não paga há ${params.payment.defaultAfterWeeks} semanas.${seized}${lost}`,
     );
   }
+
+  for (const e of ofType(ev, 'forgiven')) {
+    lines.push(`Dívida de ${e.name} perdoada: ${money(e.amount)}. O bairro comentou.`);
+  }
+
+  for (const e of ofType(ev, 'complaint')) lines.push(complaintText[e.source](e.name));
 
   for (const e of ofType(ev, 'loanMade')) {
     const guarantee = e.collateral ? ` Garantia: ${collateralText[e.collateral].noun}.` : '';

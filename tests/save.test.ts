@@ -43,12 +43,40 @@ describe('migração', () => {
     }
     delete v1.stats.recovered;
     const migrated = deserialize(JSON.stringify(v1));
-    expect(migrated.saveVersion).toBe(2);
+    expect(migrated.saveVersion).toBe(3);
     expect(migrated.stats.recovered).toBe(0);
     for (const r of migrated.requests) {
       expect(r.assets[0]!.kind).toBe('celular');
       expect(r.maxRate).toBeGreaterThan(0);
     }
     expect(() => advanceWeeks(migrated, 3)).not.toThrow();
+  });
+});
+
+describe('migração 2 → 3', () => {
+  it('ganha política, medo, boca a boca e exceções', () => {
+    const s = advanceWeeks(newGame(4), 3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- save antigo, sem tipo
+    const v2 = JSON.parse(serialize(s)) as Record<string, any>;
+    v2.saveVersion = 2;
+    for (const k of ['fear', 'word', 'complaints', 'policy']) delete v2[k];
+    for (const l of v2.loans) {
+      delete l.override;
+      delete l.lastLevel;
+    }
+    for (const r of v2.journal) {
+      delete r.fear;
+      delete r.word;
+    }
+    delete v2.stats.forgiven;
+    const m = deserialize(JSON.stringify(v2));
+    expect(m.saveVersion).toBe(3);
+    expect(m.fear).toBe(0);
+    expect(m.word).toBe(30);
+    expect(m.complaints).toBe(0);
+    expect(m.policy.collection).toEqual({ conversa: 1, pressao: 2, primo: 4 });
+    expect(m.stats.forgiven).toBe(0);
+    for (const l of m.loans) expect(l.override).toBeNull();
+    expect(() => advanceWeeks(m, 3)).not.toThrow();
   });
 });

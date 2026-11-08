@@ -1,7 +1,9 @@
-import { params } from '../content/params';
+import { collection, params } from '../content/params';
 import {
   canAccept,
+  clampMeter,
   collect,
+  forgive,
   generateRequests,
   makeLoan,
   tolerance,
@@ -9,10 +11,20 @@ import {
   type LoanTerms,
 } from './agiota';
 import { createRng, type Rng } from './rng';
-import { SAVE_VERSION, type GameEvent, type GameState } from './state';
+import {
+  SAVE_VERSION,
+  type CollectionPolicy,
+  type GameEvent,
+  type GameState,
+  type Level,
+} from './state';
 
 export type Decision =
-  ({ type: 'accept'; requestId: number } & LoanTerms) | { type: 'refuse'; requestId: number };
+  | ({ type: 'accept'; requestId: number } & LoanTerms)
+  | { type: 'refuse'; requestId: number }
+  | { type: 'setPolicy'; collection: CollectionPolicy }
+  | { type: 'setOverride'; loanId: number; override: Level | null }
+  | { type: 'forgive'; loanId: number };
 
 export interface StepResult {
   state: GameState;
@@ -30,7 +42,11 @@ export function newGame(seed: number): GameState {
     requests: [],
     loans: [],
     nextId: 1,
-    stats: { lent: 0, received: 0, writtenOff: 0, recovered: 0 },
+    stats: { lent: 0, received: 0, writtenOff: 0, recovered: 0, forgiven: 0 },
+    policy: { collection: { ...collection.defaultPolicy } },
+    fear: 0,
+    word: collection.word.start,
+    complaints: 0,
     queue: [{ week: 1, event: { type: 'gameStarted' } }],
     journal: [],
     devUsed: false,
@@ -47,6 +63,9 @@ export function newGame(seed: number): GameState {
  * lançam erro.
  */
 export function decide(prev: GameState, d: Decision): GameState {
+  if (d.type === 'setPolicy' || d.type === 'setOverride' || d.type === 'forgive') {
+    return decideCollection(prev, d);
+  }
   const req = prev.requests.find((r) => r.id === d.requestId);
   if (!req) throw new Error(`Pedido ${d.requestId} não existe.`);
   const state: GameState = structuredClone(prev);
@@ -76,12 +95,46 @@ export function decide(prev: GameState, d: Decision): GameState {
   state.loans.push(makeLoan(state, req, terms));
   state.cash -= req.amount;
   state.stats.lent += req.amount;
+  state.word = clampMeter(
+    state.word +
+      collection.word.loanMade +
+      (collateral === 'inss' ? collection.inss.wordOnLend : 0),
+  );
   return schedule(state, state.week, {
     type: 'loanMade',
     name: req.debtor.short,
     amount: req.amount,
     ...terms,
   });
+}
+
+function validThreshold(t: number | null): boolean {
+  return t === null || (Number.isInteger(t) && t >= 1 && t <= collection.maxThreshold);
+}
+
+/** Decisões sobre cobrança, aplicadas na hora. */
+function decideCollection(
+  prev: GameState,
+  d: Extract<Decision, { type: 'setPolicy' | 'setOverride' | 'forgive' }>,
+): GameState {
+  const state = structuredClone(prev);
+  if (d.type === 'setPolicy') {
+    const c = d.collection;
+    if (![c.conversa, c.pressao, c.primo].every(validThreshold)) {
+      throw new Error('Limiar de cobrança inválido.');
+    }
+    state.policy = { collection: { ...c } };
+    return state;
+  }
+  if (d.type === 'setOverride') {
+    const loan = state.loans.find((l) => l.id === d.loanId);
+    if (!loan) throw new Error(`Empréstimo ${d.loanId} não existe.`);
+    loan.override = d.override;
+    return state;
+  }
+  const events: GameEvent[] = [];
+  forgive(state, d.loanId, events);
+  return schedule(state, state.week, events[0]!);
 }
 
 /**
@@ -106,9 +159,24 @@ export function step(
   for (const req of state.requests) events.push({ type: 'expired', name: req.debtor.short });
   state.requests = [];
 
-  for (const loan of state.loans) collect(state, loan, rng, events);
+  const fear = state.fear;
+  for (const loan of state.loans) collect(state, loan, rng, events, fear);
 
-  state.journal.push({ week: state.week, events, cash: state.cash });
+  const c = collection;
+  if (c.fear.ambient > 0 && rng.chance(c.fear.ambient * (state.fear / 100))) {
+    state.complaints += 1;
+    events.push({ type: 'complaint', source: 'ambiente' });
+  }
+  state.fear = clampMeter(state.fear * c.fear.decay);
+  state.word = clampMeter(state.word + (c.word.start - state.word) * c.word.drift);
+
+  state.journal.push({
+    week: state.week,
+    events,
+    cash: state.cash,
+    fear: state.fear,
+    word: state.word,
+  });
   if (state.journal.length > params.journalWeeks) {
     state.journal.splice(0, state.journal.length - params.journalWeeks);
   }

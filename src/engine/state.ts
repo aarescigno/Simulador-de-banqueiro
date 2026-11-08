@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export interface Debtor {
   /** Nome completo, para a ficha. */
@@ -7,6 +7,16 @@ export interface Debtor {
   short: string;
   initials: string;
   profession: string;
+}
+
+/** Nível de cobrança, do mais brando ao mais pesado. */
+export type Level = 'conversa' | 'pressao' | 'primo';
+
+/** Por nível, a partir de qual semana de atraso (1 a 5) ele vale; null = nunca. */
+export type CollectionPolicy = Record<Level, number | null>;
+
+export interface Policy {
+  collection: CollectionPolicy;
 }
 
 export type CollateralKind = 'celular' | 'moto' | 'inss';
@@ -61,9 +71,15 @@ export interface Loan {
   collateral: Collateral | null;
   /** Quanto a garantia rendeu depois do calote. */
   recovered: number;
-  status: 'active' | 'paid' | 'defaulted';
+  /** Exceção do jogador à regra de cobrança; null segue a regra. */
+  override: Level | null;
+  /** Nível aplicado na última semana de atraso. */
+  lastLevel: Level | null;
+  status: 'active' | 'paid' | 'defaulted' | 'forgiven';
   endWeek?: number;
 }
+
+export type ComplaintSource = 'pressao' | 'primo' | 'moto' | 'celular' | 'inss' | 'ambiente';
 
 /** Evento produzido pelo motor. O texto exibido fica em src/content/journal.ts. */
 export type GameEvent =
@@ -80,8 +96,10 @@ export type GameEvent =
   | { type: 'refused'; name: string }
   | { type: 'walkedOut'; name: string }
   | { type: 'expired'; name: string }
-  | { type: 'paid'; name: string; amount: number }
-  | { type: 'missed'; name: string; streak: number }
+  | { type: 'paid'; name: string; amount: number; level?: Level | null }
+  | { type: 'missed'; name: string; streak: number; level?: Level | null }
+  | { type: 'forgiven'; name: string; amount: number }
+  | { type: 'complaint'; source: ComplaintSource; name?: string }
   | { type: 'settled'; name: string; profit: number }
   | {
       type: 'defaulted';
@@ -101,6 +119,9 @@ export interface WeekReport {
   week: number;
   events: GameEvent[];
   cash: number;
+  /** Medo e boca a boca ao fechar a semana. */
+  fear: number;
+  word: number;
 }
 
 export interface Stats {
@@ -109,6 +130,8 @@ export interface Stats {
   writtenOff: number;
   /** Recebido com a venda de garantias. */
   recovered: number;
+  /** Saldo de dívidas perdoadas. */
+  forgiven: number;
 }
 
 export interface GameState {
@@ -124,6 +147,13 @@ export interface GameState {
   loans: Loan[];
   nextId: number;
   stats: Stats;
+  policy: Policy;
+  /** Medo no bairro, de 0 a 100. */
+  fear: number;
+  /** Boca a boca, de 0 a 100. */
+  word: number;
+  /** Denúncias acumuladas. */
+  complaints: number;
   /** Fila de eventos agendados, em ordem de semana. */
   queue: ScheduledEvent[];
   /** Relatórios das semanas fechadas, do mais antigo ao mais novo. */

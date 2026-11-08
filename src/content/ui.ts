@@ -93,13 +93,34 @@ export const ui = {
     installment: (v: string) => `${v}/semana`,
     late: (w: number) => (w === 1 ? '1 semana sem pagar' : `${w} semanas sem pagar`),
     upToDate: 'Em dia',
+    levelNow: (level: string) => `Esta semana: ${level}`,
+    collectionLabel: 'Cobrança',
+    rule: 'Regra',
+    forgive: 'Perdoar dívida',
+    confirmForgive: (amount: string) => `Perdoar ${amount}? O bairro vai saber.`,
+    forgivenStatus: (amount: string) => `Perdoado · ${amount}`,
     paid: (profit: string) => `Quitou · lucro ${profit}`,
     defaulted: (lost: string) => `Calote · baixado ${lost}`,
   },
 
   policies: {
     title: 'Políticas',
-    soon: 'Cobrança em níveis chega no próximo marco. Por ora, a cobrança é a conversa de sempre.',
+    collection: 'Cobrança',
+    collectionHint: 'Regra para todo devedor em atraso. Exceções na Carteira.',
+    from: 'Aplicar a partir de',
+    never: 'Nunca',
+    week: (n: number) => `${n}ª semana de atraso`,
+  },
+
+  levels: {
+    conversa: { name: 'Conversa', chip: 'Conversa', text: 'Passar lá, lembrar da data.' },
+    pressao: { name: 'Pressão', chip: 'Pressão', text: 'Ligar no trabalho. Falar com a família.' },
+    primo: { name: 'Mandar o primo', chip: 'Primo', text: 'O primo resolve. Não pergunte como.' },
+  },
+
+  meters: {
+    fear: { name: 'Medo', text: 'Faz todo mundo pagar. Afasta quem tem opção.' },
+    word: { name: 'Boca a boca', text: 'Traz pedidos. E gente perguntando.' },
   },
 
   pocket: {

@@ -6,7 +6,10 @@ export const params = {
   journalWeeks: 104,
 
   requests: {
-    perWeek: [1, 3] as const,
+    /** Pedidos por semana: sorteio entre min e max, mais floor(boca a boca / wordDivisor + sorteio), até maxTotal. */
+    perWeek: [1, 2] as const,
+    wordDivisor: 50,
+    maxTotal: 5,
     /** Risco base: soma de dois sorteios, antes dos ajustes de profissão e motivo. */
     baseRisk: [0.5, 0.3] as const,
     riskClamp: [0.02, 0.98] as const,
@@ -37,7 +40,7 @@ export const params = {
     /** Chance de pagar depois de quebrar. */
     brokePay: 0.05,
     /** Semanas seguidas sem pagar até virar calote. */
-    defaultAfterWeeks: 4,
+    defaultAfterWeeks: 6,
   },
 
   /**
@@ -81,6 +84,47 @@ export const params = {
       value: [1_500, 2_800] as const,
     },
   },
+};
+
+/**
+ * Cobrança por política. Em cada nível: payBonus soma na chance de pagar, brokePay na de quem
+ * quebrou, hazard na de quebrar; fear e word mexem no medo e no boca a boca; complaint é a chance
+ * de denúncia. Tudo isso acontece uma vez por semana em atraso, pague ou não.
+ */
+export const collection = {
+  maxThreshold: 5,
+  defaultPolicy: { conversa: 1, pressao: 2, primo: 4 } as const,
+  levels: {
+    conversa: { payBonus: 0.08, brokePay: 0, hazard: 0, fear: 0.3, word: 0, complaint: 0 },
+    pressao: { payBonus: 0.16, brokePay: 0.05, hazard: 0.02, fear: 1, word: -0.5, complaint: 0.02 },
+    primo: { payBonus: 0.42, brokePay: 0.18, hazard: 0.03, fear: 2.8, word: -3, complaint: 0.06 },
+  },
+  fear: {
+    /** Medo × decay a cada semana, depois dos ganhos. */
+    decay: 0.85,
+    /** Soma em payChance de todo devedor não quebrado: payBonus × medo/100. */
+    payBonus: 0.12,
+    /** Soma no risco bruto de quem pede: riskBonus × medo/100. */
+    riskBonus: 0.1,
+    /** Chance semanal de denúncia ambiente: ambient × medo/100. */
+    ambient: 0.03,
+  },
+  word: {
+    start: 30,
+    /** Fração da distância até o valor inicial que ele anda por semana. */
+    drift: 0.05,
+    loanMade: 1,
+    settled: 1,
+    forgiven: 4,
+  },
+  /** Custo de tomar a garantia no calote. */
+  seized: {
+    celular: { fear: 1, word: -3, complaint: 0.1 },
+    moto: { fear: 4, word: -8, complaint: 0.3 },
+  },
+  /** Cartão do INSS: custo no boca a boca ao fechar o empréstimo e denúncia semanal enquanto retido. */
+  inss: { wordOnLend: -4, complaintPerWeek: 0.02 },
+  forgive: { fear: -2 },
 };
 
 export const WEEKS_PER_MONTH = 52 / 12;
