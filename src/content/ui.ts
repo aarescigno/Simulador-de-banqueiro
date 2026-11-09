@@ -53,7 +53,7 @@ export const ui = {
   summary: {
     cash: 'Caixa',
     receivable: 'A receber',
-    lent: 'Emprestado',
+    pocket: 'Bolso',
     writtenOff: 'Calote',
     debtors: 'Devedores',
     late: 'Atrasados',
@@ -153,7 +153,41 @@ export const ui = {
 
   pocket: {
     title: 'Bolso',
-    soon: 'Em seu nome, laranja, offshore. Ainda não. Por enquanto, todo o dinheiro está no caixa.',
+    protectedLabel: 'Protegido',
+    tagline: 'O caixa trabalha. O bolso é seu. O placar é o que estiver protegido no fim.',
+    blocked: (amount: string, week: number) =>
+      `Bloqueado pela Justiça: ${amount} · libera na semana ${week}`,
+    amountLabel: 'Valor',
+    amountHint: 'Valor em reais',
+    shortcuts: { k1: '+1 mil', k5: '+5 mil', all: 'Todo o caixa', zero: 'Zerar' },
+    stash: 'Guardar',
+    take: 'Tirar',
+    names: {
+      own: 'Em seu nome',
+      laranja: (short: string) => `No nome de ${short}`,
+      offshore: 'Lá fora',
+    },
+    texts: {
+      own: 'Sem custo. Bloqueado se a polícia bater na sua porta.',
+      laranja: (short: string, pct: string, his: string) =>
+        `${short} fica com ${pct} de cada depósito. Fora do seu nome, dentro do ${his}.`,
+      offshore: (fee: string, min: string) =>
+        `O doleiro cobra ${fee} na ida e ${fee} na volta, mínimo ${min}. A polícia não alcança. O doleiro, às vezes, sim.`,
+    },
+    balance: 'Saldo',
+    noAmount: 'Digite um valor.',
+    noCash: 'Caixa não cobre.',
+    noBalance: 'Saldo não cobre.',
+    belowMin: (min: string) => `Mínimo ${min} na remessa.`,
+    confirmStash: {
+      own: (amount: string) => `Guardar ${amount} em seu nome?`,
+      laranja: (amount: string, short: string, fee: string) =>
+        `Guardar ${amount}? ${short} fica com ${fee}.`,
+      offshore: (amount: string, fee: string) => `Mandar ${amount}? O doleiro fica com ${fee}.`,
+    },
+    confirmTake: {
+      offshore: (amount: string, fee: string) => `Trazer ${amount}? O doleiro fica com ${fee}.`,
+    },
   },
 
   dev: {

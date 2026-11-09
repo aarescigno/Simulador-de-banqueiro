@@ -1,4 +1,4 @@
-import { heatBand, bandRank, receivable, step, type HeatBand } from '../../engine';
+import { heatBand, bandRank, protectedWealth, receivable, step, type HeatBand } from '../../engine';
 import { DilemmaCard } from '../DilemmaCard';
 import { collection } from '../../content/params';
 import { money } from '../../content/format';
@@ -26,7 +26,7 @@ export function Summary({ state, update, goTo }: TabProps) {
         <Stat label={ui.summary.receivable} value={money(receivable(state))} />
         <Stat label={ui.summary.debtors} value={String(active.length)} />
         <Stat label={ui.summary.late} value={String(late)} tone={late ? 'amber' : ''} />
-        <Stat label={ui.summary.lent} value={money(state.stats.lent)} />
+        <Stat label={ui.summary.pocket} value={money(protectedWealth(state))} tone="green" />
         <Stat
           label={ui.summary.writtenOff}
           value={money(state.stats.writtenOff)}

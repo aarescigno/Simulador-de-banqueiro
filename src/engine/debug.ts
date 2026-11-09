@@ -1,4 +1,5 @@
 import { hazard, levelFor, payChance } from './agiota';
+import { betrayChance, protectedWealth } from './pocket';
 import type { GameState } from './state';
 
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
@@ -22,6 +23,11 @@ export function hiddenVariables(state: GameState) {
     propinas: state.police.bribes,
     buscas: state.police.raids,
     cooldownAte: state.police.cooldownUntil,
+    bolso: {
+      ...state.pocket,
+      protegido: protectedWealth(state),
+      chanceTraicao: r3(betrayChance(state.pocket.laranja)),
+    },
     politica: state.policy.collection,
     requests: state.requests.map(
       (r) => `${r.debtor.short}: risco ${r.risk}, topa até ${r.maxRate}%, paciência ${r.patience}`,

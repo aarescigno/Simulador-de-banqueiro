@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export interface Debtor {
   /** Nome completo, para a ficha. */
@@ -114,6 +114,23 @@ export interface Dilemma {
   costs: Record<DilemmaOption, number>;
 }
 
+export type Compartment = 'own' | 'laranja' | 'offshore';
+
+export interface Pocket {
+  /** Em seu nome: sem custo, mas a busca bloqueia. */
+  own: number;
+  /** No nome do laranja: comissão na ida, risco de sumir com tudo. */
+  laranja: number;
+  /** Lá fora, com o doleiro: taxa nos dois sentidos, risco de ele ser preso. */
+  offshore: number;
+  /** Em seu nome, congelado pela Justiça; não se move e não conta como protegido. */
+  blocked: number;
+  /** Semana em que o bloqueio acaba. */
+  blockedUntil: number;
+  /** Já mandou dinheiro ao doleiro (para sempre). */
+  doleiro: boolean;
+}
+
 export type ComplaintSource = 'pressao' | 'primo' | 'moto' | 'celular' | 'inss' | 'ambiente';
 
 /** Evento produzido pelo motor. O texto exibido fica em src/content/journal.ts. */
@@ -141,6 +158,12 @@ export type GameEvent =
   | { type: 'lawyerHired'; amount: number }
   | { type: 'inquiryArchived' }
   | { type: 'raid'; seized: number; lost: string[] }
+  | { type: 'stashed'; to: Compartment; amount: number; fee: number; who: string }
+  | { type: 'unstashed'; from: Compartment; amount: number; fee: number; who: string }
+  | { type: 'betrayed'; amount: number; who: string }
+  | { type: 'doleiroCaught' }
+  | { type: 'ownBlocked'; amount: number; until: number }
+  | { type: 'unblocked'; amount: number }
   | { type: 'settled'; name: string; profit: number }
   | {
       type: 'defaulted';
@@ -177,6 +200,10 @@ export interface Stats {
   forgiven: number;
   /** Caixa levado em buscas e apreensões. */
   seized: number;
+  /** Taxas pagas a laranja e doleiro. */
+  fees: number;
+  /** Levado por laranjas que sumiram. */
+  betrayed: number;
 }
 
 export interface GameState {
@@ -200,6 +227,8 @@ export interface GameState {
   /** Denúncias acumuladas. */
   complaints: number;
   police: Police;
+  /** O que está fora do caixa. */
+  pocket: Pocket;
   /** Escolhas pendentes; sem resposta até fechar a semana, valem a opção padrão. */
   dilemmas: Dilemma[];
   /** Fila de eventos agendados, em ordem de semana. */

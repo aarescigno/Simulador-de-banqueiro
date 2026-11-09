@@ -1,5 +1,5 @@
 // Atenção policial, inquérito, busca e apreensão, e o dilema do inquérito.
-import { police } from '../content/params';
+import { pocket as pocketParams, police } from '../content/params';
 import type { Rng } from './rng';
 import type {
   Dilemma,
@@ -69,6 +69,13 @@ function raid(state: GameState, rng: Rng, events: GameEvent[]): void {
     loan.endWeek = state.week;
     state.stats.writtenOff += loan.totalDue - loan.totalPaid;
     lost.push(loan.debtor.short);
+  }
+  const pk = state.pocket;
+  if (pk.own > 0 || pk.blocked > 0) {
+    pk.blocked += pk.own;
+    pk.own = 0;
+    pk.blockedUntil = state.week + pocketParams.block.weeks;
+    events.push({ type: 'ownBlocked', amount: pk.blocked, until: pk.blockedUntil });
   }
   state.fear = meter(state.fear * r.fearAfter);
   state.police.heat *= r.heatAfter;

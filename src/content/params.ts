@@ -168,3 +168,31 @@ export const police = {
   raid: { cashShare: 0.5, loanLoss: 0.35, heatAfter: 0.5, fearAfter: 0.5 },
   archived: { heatAfter: 0.7 },
 };
+
+/**
+ * Bolso: o que o jogador tira do caixa e guarda. O caixa é o negócio (a busca leva parte dele);
+ * o bolso é o placar. Em seu nome não custa nada, mas a busca bloqueia. O laranja cobra
+ * comissão e pode sumir com tudo. O doleiro cobra nos dois sentidos e pode ser preso.
+ */
+export const pocket = {
+  laranja: {
+    /** Comissão sobre cada depósito. */
+    fee: 0.05,
+    /** Chance semanal de sumir com tudo = min(betrayMax, betrayScale × (saldo / betrayRef)²). */
+    betrayScale: 0.02,
+    betrayRef: 50_000,
+    betrayMax: 0.05,
+  },
+  offshore: {
+    /** Taxa do doleiro na ida e na volta. */
+    fee: 0.1,
+    /** Remessa mínima (a volta não tem mínimo). */
+    min: 5_000,
+    /** Chance semanal de o doleiro ser preso, depois da primeira remessa. */
+    caughtChance: 0.004,
+    /** Atenção policial somada quando o doleiro cai. */
+    caughtHeat: 25,
+  },
+  /** Semanas que o bloqueio judicial dura (nova busca reinicia). */
+  block: { weeks: 14 },
+};

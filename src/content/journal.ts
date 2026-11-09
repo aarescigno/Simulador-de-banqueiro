@@ -92,7 +92,39 @@ export function reportLines(r: WeekReport): string[] {
     lines.push(`Dívida de ${e.name} perdoada: ${money(e.amount)}. O bairro comentou.`);
   }
 
+  for (const e of ofType(ev, 'stashed')) {
+    const got = money(e.amount - e.fee);
+    if (e.to === 'own') lines.push(`${money(e.amount)} guardados em seu nome.`);
+    else if (e.to === 'laranja') {
+      lines.push(`${money(e.amount)} no nome de ${e.who}. Ficaram ${got} de comissão.`);
+    } else lines.push(`${money(e.amount)} com o doleiro. Chegaram ${got} lá fora.`);
+  }
+  for (const e of ofType(ev, 'unstashed')) {
+    if (e.from === 'own') lines.push(`${money(e.amount)} do bolso de volta ao caixa.`);
+    else if (e.from === 'laranja') lines.push(`${e.who} devolveu ${money(e.amount)}.`);
+    else {
+      lines.push(`${money(e.amount)} trazidos de fora. O doleiro ficou com ${money(e.fee)}.`);
+    }
+  }
+
   for (const e of ofType(ev, 'complaint')) lines.push(complaintText[e.source](e.name));
+
+  for (const e of ofType(ev, 'betrayed')) {
+    lines.push(`${e.who} comprou uma caminhonete e trocou de número. Levou ${money(e.amount)}.`);
+  }
+  if (ofType(ev, 'doleiroCaught').length) {
+    lines.push(
+      'A Polícia Federal prendeu um doleiro na capital. A planilha dele tem apelidos. Um parece o seu.',
+    );
+  }
+  for (const e of ofType(ev, 'ownBlocked')) {
+    lines.push(
+      `Bloqueio judicial: ${money(e.amount)} em seu nome congelados até a semana ${e.until}.`,
+    );
+  }
+  for (const e of ofType(ev, 'unblocked')) {
+    lines.push(`A Justiça liberou o bloqueio: ${money(e.amount)} de volta em seu nome.`);
+  }
 
   for (const e of ofType(ev, 'heatRose')) lines.push(heatRoseText[e.band]);
   if (ofType(ev, 'inquiryOpened').length) {

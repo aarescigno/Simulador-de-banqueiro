@@ -5,10 +5,12 @@ import {
   decide,
   step,
   type CollateralKind,
+  type Compartment,
   type CollectionPolicy,
   type DilemmaOption,
   type GameState,
 } from '../src/engine';
+import { pocket } from '../src/content/params';
 
 export interface BotOptions {
   monthlyRate: number;
@@ -23,7 +25,12 @@ export interface BotOptions {
   policy?: CollectionPolicy;
   /** Resposta ao dilema do inquérito (INQ=...); sem caixa para a opção, corre. Padrão: correr. */
   inquiry?: DilemmaOption;
+  /** Guarda o caixa acima de POCKET_KEEP neste compartimento (POCKET=...). Padrão: nenhum. */
+  pocket?: Compartment | null;
 }
+
+/** Caixa que o bot mantém para emprestar; o resto vai para o bolso. */
+export const POCKET_KEEP = 15_000;
 
 /** Políticas de cobrança do sim (POLICY=...). */
 export const policies: Record<string, CollectionPolicy> = {
@@ -38,6 +45,11 @@ const strongest: CollateralKind[] = ['inss', 'moto', 'celular'];
 /** Responde a todos os pedidos da semana. */
 export function botDecide(state: GameState, o: BotOptions): GameState {
   let s = state;
+  if (o.pocket) {
+    const excess = s.cash - POCKET_KEEP;
+    const min = o.pocket === 'offshore' ? pocket.offshore.min : 1;
+    if (excess >= min) s = decide(s, { type: 'stash', to: o.pocket, amount: excess });
+  }
   for (const d of state.dilemmas) {
     const want = o.inquiry ?? 'correr';
     const option = d.costs[want] <= s.cash ? want : 'correr';

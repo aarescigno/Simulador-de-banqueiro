@@ -456,3 +456,16 @@ select.field {
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+
+/* Bolso */
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.pair .btn {
+  width: 100%;
+}
+.phrase {
+  margin: 0;
+}

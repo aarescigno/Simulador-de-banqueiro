@@ -13,7 +13,7 @@ import type { GameState } from '../engine';
 import { money } from '../content/format';
 import { ui } from '../content/ui';
 import { Journal } from './tabs/Journal';
-import { Placeholder } from './tabs/Placeholder';
+import { Pocket } from './tabs/Pocket';
 import { Policies } from './tabs/Policies';
 import { Portfolio } from './tabs/Portfolio';
 import { Summary } from './tabs/Summary';
@@ -30,11 +30,7 @@ const tabs: { id: TabId; icon: LucideIcon; view: ComponentType<TabProps> }[] = [
   { id: 'summary', icon: LayoutDashboard, view: Summary },
   { id: 'portfolio', icon: NotebookText, view: Portfolio },
   { id: 'policies', icon: SlidersHorizontal, view: Policies },
-  {
-    id: 'pocket',
-    icon: Wallet,
-    view: () => <Placeholder title={ui.pocket.title} text={ui.pocket.soon} />,
-  },
+  { id: 'pocket', icon: Wallet, view: Pocket },
   { id: 'journal', icon: Newspaper, view: Journal },
 ];
 

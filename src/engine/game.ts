@@ -10,11 +10,13 @@ import {
   validTerms,
   type LoanTerms,
 } from './agiota';
+import { emptyPocket, stash, tickPocket, unstash } from './pocket';
 import { applyChoice, complain, heatBand, tickPolice } from './police';
 import { createRng, type Rng } from './rng';
 import {
   SAVE_VERSION,
   type CollectionPolicy,
+  type Compartment,
   type DilemmaOption,
   type GameEvent,
   type GameState,
@@ -27,7 +29,9 @@ export type Decision =
   | { type: 'setPolicy'; collection: CollectionPolicy }
   | { type: 'setOverride'; loanId: number; override: Level | null }
   | { type: 'forgive'; loanId: number }
-  | { type: 'choose'; dilemmaId: number; option: DilemmaOption };
+  | { type: 'choose'; dilemmaId: number; option: DilemmaOption }
+  | { type: 'stash'; to: Compartment; amount: number }
+  | { type: 'unstash'; from: Compartment; amount: number };
 
 export interface StepResult {
   state: GameState;
@@ -45,12 +49,22 @@ export function newGame(seed: number): GameState {
     requests: [],
     loans: [],
     nextId: 1,
-    stats: { lent: 0, received: 0, writtenOff: 0, recovered: 0, forgiven: 0, seized: 0 },
+    stats: {
+      lent: 0,
+      received: 0,
+      writtenOff: 0,
+      recovered: 0,
+      forgiven: 0,
+      seized: 0,
+      fees: 0,
+      betrayed: 0,
+    },
     policy: { collection: { ...collection.defaultPolicy } },
     fear: 0,
     word: collection.word.start,
     complaints: 0,
     police: { heat: 0, inquiry: null, cooldownUntil: 0, bribes: 0, raids: 0 },
+    pocket: emptyPocket(),
     dilemmas: [],
     queue: [{ week: 1, event: { type: 'gameStarted' } }],
     journal: [],
@@ -72,6 +86,12 @@ export function decide(prev: GameState, d: Decision): GameState {
     const state = structuredClone(prev);
     const event = applyChoice(state, d.dilemmaId, d.option);
     return event ? schedule(state, state.week, event) : state;
+  }
+  if (d.type === 'stash' || d.type === 'unstash') {
+    const state = structuredClone(prev);
+    const event =
+      d.type === 'stash' ? stash(state, d.to, d.amount) : unstash(state, d.from, d.amount);
+    return schedule(state, state.week, event);
   }
   if (d.type === 'setPolicy' || d.type === 'setOverride' || d.type === 'forgive') {
     return decideCollection(prev, d);
@@ -182,6 +202,7 @@ export function step(
   state.word = clampMeter(state.word + (c.word.start - state.word) * c.word.drift);
 
   tickPolice(state, rng, events, bandBefore);
+  tickPocket(state, rng, events);
 
   state.journal.push({
     week: state.week,

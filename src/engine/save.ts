@@ -40,6 +40,12 @@ const migrations: Record<number, Migration> = {
     stats: { ...(old.stats as Obj), seized: 0 },
     journal: (old.journal as Obj[]).map((r) => ({ ...r, heat: 0 })),
   }),
+  // 4 → 5: bolso com três compartimentos.
+  4: (old) => ({
+    ...old,
+    pocket: { own: 0, laranja: 0, offshore: 0, blocked: 0, blockedUntil: 0, doleiro: false },
+    stats: { ...(old.stats as Obj), fees: 0, betrayed: 0 },
+  }),
 };
 
 export class SaveError extends Error {}

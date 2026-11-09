@@ -5,3 +5,4 @@ export * from './state';
 export * from './debug';
 export * from './agiota';
 export * from './police';
+export * from './pocket';
