@@ -6,7 +6,7 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
-## 2026-11-09 · Marco 1a · Bolso com 3 compartimentos · PR #7
+## 2026-11-09 · Marco 1a · Bolso com 3 compartimentos · PR #6
 
 **Feito**
 - Motor: `src/engine/pocket.ts` (`stash`, `unstash`, `protectedWealth`, `betrayChance`, `tickPocket`, taxas). Decisões `stash` e `unstash` aplicadas na hora; `tickPocket` roda logo depois do `tickPolice` (desbloqueio, traição do laranja, doleiro preso; sem saldo ou sem doleiro não sorteia nada). A busca em `police.ts` bloqueia o `own` (`ownBlocked`).
