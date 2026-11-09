@@ -45,6 +45,7 @@ export function Portfolio({ state, update }: TabProps) {
 
       <h2>{ui.portfolio.active}</h2>
       {active.length === 0 && <p class="dim">{ui.portfolio.noLoans}</p>}
+      {state.primoGone && <p class="amber small">{ui.levels.primoGone}</p>}
       {active.map((l) => (
         <LoanRow key={l.id} loan={l} state={state} update={update} />
       ))}
@@ -266,6 +267,7 @@ function LoanRow({
                 key={lv}
                 class={`chip ${l.override === lv ? 'on' : ''}`}
                 aria-pressed={l.override === lv}
+                disabled={lv === 'primo' && state.primoGone}
                 onClick={() =>
                   update(decide(state, { type: 'setOverride', loanId: l.id, override: lv }))
                 }

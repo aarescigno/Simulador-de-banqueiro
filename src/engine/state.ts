@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export interface Debtor {
   /** Nome completo, para a ficha. */
@@ -103,7 +103,7 @@ export interface Police {
   raids: number;
 }
 
-/** As 19 ocorrências: 16 sorteáveis e 3 de seguimento (agendadas). */
+/** As 20 ocorrências: 16 sorteáveis e 4 de seguimento (agendadas). */
 export type IncidentId =
   | 'delegado'
   | 'milicia'
@@ -123,9 +123,10 @@ export type IncidentId =
   | 'tragedia'
   | 'gas'
   | 'decimo'
-  | 'cartao';
+  | 'cartao'
+  | 'jurado';
 
-export type DilemmaKind = 'inquerito' | IncidentId;
+export type DilemmaKind = 'inquerito' | 'processo' | IncidentId;
 /** Opção de um dilema; as válidas por tipo ficam em `dilemmaOptions` (src/engine/incidents.ts). */
 export type DilemmaOption = string;
 
@@ -165,6 +166,32 @@ export interface Incidents {
   vereadorUntil: number;
   /** Choque de renda: soma na chance de pagar de quem não quebrou. */
   shock: { until: number; payDelta: number };
+}
+
+/** Crise do degrau 1: o processo (busca que virou denúncia) e o jurado (a milícia). */
+export type CrisisKind = 'processo' | 'jurado';
+
+export interface Crisis {
+  kind: CrisisKind;
+  startWeek: number;
+  /** Semanas até o julgamento (processo) ou até o fim da ameaça (jurado). */
+  weeksLeft: number;
+  /** Chance de condenação no julgamento; no jurado, 0. */
+  prisonChance: number;
+  lawyer: boolean;
+}
+
+/** Como a partida termina. */
+export type Ending = 'preso' | 'morto' | 'exilado' | 'aposentado';
+
+/** Parcelas do placar de um final. */
+export type EndingPart = 'cash' | 'own' | 'blocked' | 'laranja' | 'offshore';
+
+export interface Ended {
+  kind: Ending;
+  week: number;
+  score: number;
+  parts: { part: EndingPart; amount: number }[];
 }
 
 export type Compartment = 'own' | 'laranja' | 'offshore';
@@ -226,6 +253,8 @@ export type GameEvent =
       name?: string;
       amount?: number;
     }
+  | { type: 'crisisOpened'; kind: CrisisKind }
+  | { type: 'crisisEnded'; kind: CrisisKind; how: 'absolvido' | 'sobreviveu' }
   | { type: 'mesadaFailed' }
   | { type: 'militiaCut'; amount: number }
   | {
@@ -304,6 +333,12 @@ export interface GameState {
   queue: ScheduledEvent[];
   /** Relatórios das semanas fechadas, do mais antigo ao mais novo. */
   journal: WeekReport[];
+  /** Crise aberta, se houver; uma por vez. */
+  crisis: Crisis | null;
+  /** Fim da partida, se acabou; com ele, `step` e `decide` lançam erro. */
+  ended: Ended | null;
+  /** O primo foi entregue: vira pressão para sempre. */
+  primoGone: boolean;
   /** Marca partidas mexidas pelo painel dev. */
   devUsed: boolean;
 }

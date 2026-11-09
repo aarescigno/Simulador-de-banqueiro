@@ -20,6 +20,11 @@ export function hiddenVariables(state: GameState) {
       ? `faltam ${state.police.inquiry.weeksLeft} sem, advogado ${state.police.inquiry.lawyer ? 'sim' : 'não'}, ` +
         `${state.police.inquiry.complaints} denúncias`
       : 'nenhum',
+    crise: state.crisis
+      ? `${state.crisis.kind}, faltam ${state.crisis.weeksLeft} sem, advogado ${state.crisis.lawyer ? 'sim' : 'não'}, condenação ${state.crisis.prisonChance}`
+      : 'nenhuma',
+    primoEntregue: state.primoGone,
+    final: state.ended ?? 'não',
     propinas: state.police.bribes,
     buscas: state.police.raids,
     cooldownAte: state.police.cooldownUntil,

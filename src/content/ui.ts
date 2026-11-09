@@ -114,6 +114,7 @@ export const ui = {
   },
 
   levels: {
+    primoGone: 'O primo não trabalha mais com você.',
     conversa: { name: 'Conversa', chip: 'Conversa', text: 'Passar lá, lembrar da data.' },
     pressao: { name: 'Pressão', chip: 'Pressão', text: 'Ligar no trabalho. Falar com a família.' },
     primo: { name: 'Mandar o primo', chip: 'Primo', text: 'O primo resolve. Não pergunte como.' },
@@ -161,6 +162,9 @@ export const ui = {
       offshore: (fee: string, min: string) =>
         `O doleiro cobra ${fee} na ida e ${fee} na volta, mínimo ${min}. A polícia não alcança. O doleiro, às vezes, sim.`,
     },
+    retire: 'Pendurar o caderninho',
+    retireTooEarly: (week: number) => `Só depois da semana ${week}.`,
+    confirmRetire: 'Encerrar a partida? Você leva o caixa e o bolso; a carteira fica na rua.',
     balance: 'Saldo',
     noAmount: 'Digite um valor.',
     noCash: 'Caixa não cobre.',
@@ -190,6 +194,7 @@ export const ui = {
     copyState: 'Copiar estado',
     copied: 'Estado copiado. Cole na issue.',
     forceIncident: 'Forçar ocorrência',
+    forceTrial: 'Forçar processo',
     force: 'Forçar',
     close: 'Fechar',
     report: (version: string, seed: number, week: number, save: string) =>

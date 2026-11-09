@@ -2,6 +2,7 @@ import { heatBand, bandRank, protectedWealth, receivable, step, type HeatBand } 
 import { DilemmaCard } from '../DilemmaCard';
 import { collection } from '../../content/params';
 import { money } from '../../content/format';
+import { crisisStrip } from '../../content/endings';
 import { strips } from '../../content/incidents';
 import { reportLines } from '../../content/journal';
 import { ui } from '../../content/ui';
@@ -81,7 +82,13 @@ export function Summary({ state, update, goTo }: TabProps) {
         </div>
       )}
 
-      {inquiry && (
+      {state.crisis && (
+        <div class="inquiry-bar small red">
+          {crisisStrip(state.crisis.kind, state.crisis.weeksLeft, state.crisis.lawyer)}
+        </div>
+      )}
+
+      {inquiry && !state.crisis && (
         <div class="inquiry-bar small amber">
           {ui.heat.inquiry(inquiry.weeksLeft, inquiry.lawyer)}
         </div>

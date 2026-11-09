@@ -53,6 +53,8 @@ const migrations: Record<number, Migration> = {
     incidents: emptyIncidents(),
     stats: { ...(old.stats as Obj), spent: 0, returned: 0 },
   }),
+  // 6 → 7: crise e finais.
+  6: (old) => ({ ...old, crisis: null, ended: null, primoGone: false }),
 };
 
 export class SaveError extends Error {}

@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { laranjaFor } from '../../content/pocket';
 import { money, percent } from '../../content/format';
-import { pocket as params } from '../../content/params';
+import { crisis as crisisParams, pocket as params } from '../../content/params';
 import { ui } from '../../content/ui';
 import { decide, protectedWealth, stashFee, unstashFee, type Compartment } from '../../engine';
 import type { TabProps } from '../Game';
@@ -120,6 +120,21 @@ export function Pocket({ state, update }: TabProps) {
           onTake={() => doTake(c)}
         />
       ))}
+
+      <div class="stack tight">
+        <button
+          class="btn wide"
+          disabled={state.week < crisisParams.retireFromWeek}
+          onClick={() => {
+            if (window.confirm(ui.pocket.confirmRetire)) update(decide(state, { type: 'retire' }));
+          }}
+        >
+          {ui.pocket.retire}
+        </button>
+        {state.week < crisisParams.retireFromWeek && (
+          <span class="small dim">{ui.pocket.retireTooEarly(crisisParams.retireFromWeek)}</span>
+        )}
+      </div>
     </div>
   );
 }

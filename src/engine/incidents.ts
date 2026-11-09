@@ -1,5 +1,6 @@
 // Ocorrências: sorteio semanal, dilemas e notícias, e os efeitos contínuos (mesada, milícia, rival...).
-import { incidents as P } from '../content/params';
+import { crisis as C, incidents as P } from '../content/params';
+import { applyCrisisChoice, openJurado } from './crisis';
 import { addHeat, applyInquiryChoice, loseLoan } from './police';
 import { createRng, type Rng } from './rng';
 import type {
@@ -31,6 +32,8 @@ export const emptyIncidents = (): Incidents => ({
 /** Opções de cada dilema; a primeira é a padrão, que vale quando o jogador não responde. */
 export const dilemmaOptions: Partial<Record<DilemmaKind, readonly DilemmaOption[]>> = {
   inquerito: ['correr', 'pagar', 'advogado'],
+  processo: ['nada', 'advogado', 'acordo', 'entregar', 'sumir', 'fugir'],
+  jurado: ['ficar', 'pagar', 'sumir', 'fugir'],
   delegado: ['recusar', 'mesada'],
   milicia: ['pagar', 'recusar'],
   milicia_recado: ['pagar', 'recusar'],
@@ -75,8 +78,8 @@ export const drawable = [
 ] as const satisfies readonly IncidentId[];
 export type DrawableId = (typeof drawable)[number];
 
-/** As 3 de seguimento, só agendadas. */
-export const followUps = ['milicia_recado', 'vereador_paga', 'pm_paga'] as const;
+/** As 4 de seguimento, só agendadas. */
+export const followUps = ['milicia_recado', 'vereador_paga', 'pm_paga', 'jurado'] as const;
 
 export const allIncidents: readonly IncidentId[] = [...drawable, ...followUps];
 
@@ -124,7 +127,7 @@ export interface Eligible {
 }
 
 function pendingIncidentDilemma(state: GameState): boolean {
-  return state.dilemmas.some((d) => d.kind !== 'inquerito');
+  return state.crisis !== null || state.dilemmas.some((d) => d.kind !== 'inquerito');
 }
 
 /** Ocorrências sorteáveis agora: gatilho, semana mínima, repetição e um dilema por vez. */
@@ -147,7 +150,8 @@ export function eligibleIncidents(state: GameState): Eligible[] {
   return out;
 }
 
-const primoOut = (state: GameState, week: number) => week < state.incidents.primoOutUntil;
+const primoOut = (state: GameState, week: number) =>
+  state.primoGone || week < state.incidents.primoOutUntil;
 
 function costsFor(state: GameState, id: IncidentId, dueWeek: number): Record<string, number> {
   switch (id) {
@@ -247,7 +251,8 @@ export function startIncident(
   dueWeek: number,
 ): void {
   state.incidents.last[id] = state.week;
-  if (isDilemma(id)) openDilemma(state, id, loan, events, dueWeek);
+  if (id === 'jurado') openJurado(state, events, dueWeek);
+  else if (isDilemma(id)) openDilemma(state, id, loan, events, dueWeek);
   else applyNews(state, id, loan, rng, events);
 }
 
@@ -293,6 +298,7 @@ function applyIncidentChoice(
       inc.militiaRate = P.milicia_recado.rate;
       break;
     case 'milicia_recado/recusar':
+      schedule(state, w + C.hit.delay, 'jurado');
       amount = Math.round(state.cash * P.milicia_recado.cashLoss);
       state.cash -= amount;
       state.stats.spent += amount;
@@ -398,6 +404,9 @@ export function applyChoice(
   state.cash -= cost;
   state.stats.spent += cost;
   if (dilemma.kind === 'inquerito') return applyInquiryChoice(state, option, cost);
+  if (dilemma.kind === 'processo' || dilemma.kind === 'jurado') {
+    return applyCrisisChoice(state, dilemma, option, cost);
+  }
   return applyIncidentChoice(state, dilemma, option);
 }
 
@@ -459,6 +468,14 @@ export function tickIncidents(state: GameState, rng: Rng, events: GameEvent[]): 
   const due = state.incidents.scheduled.filter((s) => s.week <= state.week);
   state.incidents.scheduled = state.incidents.scheduled.filter((s) => s.week > state.week);
   for (const s of due) {
+    if (s.id === 'jurado') {
+      // O recado só vale se a milícia segue de mal; com outra crise aberta, espera uma semana.
+      if (state.incidents.militia !== 'refusedTwice') continue;
+      if (state.crisis) {
+        state.incidents.scheduled.push({ week: state.week + 1, id: 'jurado' });
+        continue;
+      }
+    }
     const loan = s.loanId === undefined ? undefined : state.loans.find((l) => l.id === s.loanId);
     startIncident(state, s.id, loan, rng, events, state.week + 1);
   }

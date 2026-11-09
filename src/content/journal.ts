@@ -1,6 +1,7 @@
 // Texto do Jornal a partir dos eventos do motor. Voz de relatório, frases curtas.
 import type { ComplaintSource, GameEvent, HeatBand, Level, WeekReport } from '../engine/state';
 import { collateralText } from './collateral';
+import { crisisLine } from './endings';
 import { dilemmaTexts, newsTexts, continuing } from './incidents';
 import { money, percent } from './format';
 import { params } from './params';
@@ -134,6 +135,9 @@ export function reportLines(r: WeekReport): string[] {
       else lines.push(...(newsTexts[e.id]?.(e) ?? []));
     } else if (e.type === 'incidentChoice') {
       const line = dilemmaTexts[e.id]?.options[e.option]?.line?.(e);
+      if (line) lines.push(line);
+    } else if (e.type === 'crisisOpened' || e.type === 'crisisEnded') {
+      const line = crisisLine(e);
       if (line) lines.push(line);
     } else if (e.type === 'militiaCut') lines.push(continuing.militiaCut(e.amount));
     else if (e.type === 'mesadaFailed') lines.push(continuing.mesadaFailed);

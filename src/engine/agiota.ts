@@ -104,7 +104,8 @@ export function levelFor(
 }
 
 /** Primo fora de ação nesta semana? */
-export const isPrimoOut = (state: GameState) => state.week < state.incidents.primoOutUntil;
+export const isPrimoOut = (state: GameState) =>
+  state.primoGone || state.week < state.incidents.primoOutUntil;
 
 /** Rival ativo nesta semana? */
 export const isRivalActive = (state: GameState) => state.week < state.incidents.rivalUntil;
@@ -298,7 +299,7 @@ export function generateRequests(state: GameState, rng: Rng): LoanRequest[] {
     ...state.loans.filter((l) => l.status === 'active').map((l) => l.debtor.short),
   ]);
   const base = rng.int(perWeek[0], perWeek[1]) + Math.floor(state.word / wordDivisor + rng.next());
-  const penalty = state.police.inquiry ? police.inquiry.requestPenalty : 0;
+  const penalty = state.police.inquiry || state.crisis ? police.inquiry.requestPenalty : 0;
   const rival = isRivalActive(state);
   const count = Math.max(
     0,

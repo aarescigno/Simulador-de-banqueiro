@@ -165,10 +165,10 @@ describe('elegibilidade', () => {
     expect(ids(s)).not.toContain('bem');
   });
 
-  it('as 16 sorteáveis mais as 3 de seguimento dão 19, todas com nome', () => {
+  it('as 16 sorteáveis mais as 4 de seguimento dão 20, todas com nome', () => {
     expect(drawable).toHaveLength(16);
-    expect(followUps).toHaveLength(3);
-    expect(allIncidents).toHaveLength(19);
+    expect(followUps).toHaveLength(4);
+    expect(allIncidents).toHaveLength(20);
     for (const id of allIncidents) expect(incidentNames[id]).toBeTruthy();
   });
 });
@@ -671,14 +671,14 @@ describe('conteúdo', () => {
 });
 
 describe('painel dev', () => {
-  it('força qualquer das 19 ocorrências e marca a partida', () => {
+  it('força qualquer das 20 ocorrências e marca a partida', () => {
     for (const id of allIncidents) {
       const { s } = base(10);
       s.cash = 50_000;
       const after = devForceIncident(s, id);
       expect(after.devUsed).toBe(true);
       expect(
-        after.queue.some((q) => q.event.type === 'incident'),
+        after.queue.some((q) => q.event.type === (id === 'jurado' ? 'crisisOpened' : 'incident')),
         id,
       ).toBe(true);
       if (isDilemma(id))
@@ -717,7 +717,8 @@ describe('partidas inteiras', () => {
     for (let seed = 1; seed <= 10; seed++) {
       const s = playBot(newGame(seed), 40, { monthlyRate: 25, weeks: 8, incidents: 'recusa' });
       expect(s.cash).toBeGreaterThanOrEqual(0);
-      expect(s.week).toBe(41);
+      // Partida encerrada (morto, preso) para de avançar.
+      expect(s.week).toBe(s.ended ? s.ended.week : 41);
     }
   });
 
@@ -738,7 +739,7 @@ describe('migração 5 → 6', () => {
     delete v5.stats.spent;
     delete v5.stats.returned;
     const m = deserialize(JSON.stringify(v5));
-    expect(m.saveVersion).toBe(6);
+    expect(m.saveVersion).toBe(7);
     expect(m.incidents).toEqual({
       last: {},
       scheduled: [],

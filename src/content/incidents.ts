@@ -2,6 +2,7 @@
 // Violência e tragédia sempre implícitas; a tragédia traz a nota do CVV.
 import type { DilemmaKind, DilemmaOption, IncidentId } from '../engine/state';
 import { money, percent } from './format';
+import { crisisDilemmaTexts } from './endings';
 import { incidents as P, police } from './params';
 
 /** O que os textos podem interpolar: nome do devedor e valores. */
@@ -37,6 +38,7 @@ const s =
     t;
 
 export const dilemmaTexts: Partial<Record<DilemmaKind, DilemmaText>> = {
+  ...crisisDilemmaTexts,
   inquerito: {
     title: s('Inquérito'),
     body: s(
@@ -299,6 +301,7 @@ export const incidentNames: Record<IncidentId, string> = {
   fianca: 'fiança do primo',
   pm: 'PM',
   pm_paga: 'PM paga',
+  jurado: 'jurado (crise)',
   assalto: 'assalto',
   some: 'devedor some',
   tragedia: 'tragédia',

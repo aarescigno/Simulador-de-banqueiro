@@ -5,7 +5,11 @@ import { incidents as incidentParams } from '../src/content/params';
 import { playBot, policies } from './bot';
 
 const RUNS = Number(process.env.RUNS ?? 100);
-const WEEKS = 30;
+/** WEEKS=n: semanas de cada partida. Padrão: 30. */
+const WEEKS = Number(process.env.WEEKS ?? 30);
+/** CRISE=nada|advogado|acordo|entregar|sumir: resposta do bot às crises. Padrão: nada. */
+const crisis = (process.env.CRISE ?? 'nada') as
+  'nada' | 'advogado' | 'acordo' | 'entregar' | 'sumir';
 /** COLLATERAL=1: o bot exige a garantia mais forte. */
 const collateral = process.env.COLLATERAL === '1';
 /** POLICY=nada|conversa|padrao|primo (ou vários, separados por vírgula). */
@@ -34,6 +38,10 @@ for (const policyName of policyNames) {
       let blocked = 0;
       let occurrences = 0;
       let tragedies = 0;
+      let crises = 0;
+      let jailed = 0;
+      let dead = 0;
+      let exiled = 0;
       const seen = new Set<string>();
       for (let seed = 1; seed <= RUNS; seed++) {
         const s = playBot(newGame(seed), WEEKS, {
@@ -43,6 +51,7 @@ for (const policyName of policyNames) {
           policy: policies[policyName],
           inquiry,
           incidents,
+          crisis,
           pocket,
         });
         fear += s.fear;
@@ -52,6 +61,10 @@ for (const policyName of policyNames) {
         const events = s.journal.flatMap((r) => r.events);
         if (events.some((e) => e.type === 'inquiryOpened')) inquiries += 1;
         if (events.some((e) => e.type === 'raid')) raids += 1;
+        if (events.some((e) => e.type === 'crisisOpened')) crises += 1;
+        if (s.ended?.kind === 'preso') jailed += 1;
+        if (s.ended?.kind === 'morto') dead += 1;
+        if (s.ended?.kind === 'exilado') exiled += 1;
         for (const e of events) {
           if (e.type !== 'incident') continue;
           occurrences += 1;
@@ -61,13 +74,14 @@ for (const policyName of policyNames) {
         // Valor contábil conservador: o que falta receber, limitado ao principal, só de quem está em dia.
         kept += protectedWealth(s);
         blocked += s.pocket.blocked;
-        wealth +=
-          s.cash +
-          protectedWealth(s) +
-          s.pocket.blocked +
-          s.loans
-            .filter((l) => l.status === 'active' && l.missedStreak === 0)
-            .reduce((sum, l) => sum + Math.min(l.principal, l.totalDue - l.totalPaid), 0);
+        wealth += s.ended
+          ? s.ended.score
+          : s.cash +
+            protectedWealth(s) +
+            s.pocket.blocked +
+            s.loans
+              .filter((l) => l.status === 'active' && l.missedStreak === 0)
+              .reduce((sum, l) => sum + Math.min(l.principal, l.totalDue - l.totalPaid), 0);
         const closed = s.loans.filter((l) => l.startWeek <= WEEKS - l.weeks - 6);
         loans += closed.length;
         defaults += closed.filter((l) => l.status === 'defaulted').length;
@@ -79,7 +93,7 @@ for (const policyName of policyNames) {
           `medo ${(fear / RUNS).toFixed(0)} | boca ${(word / RUNS).toFixed(0)} | denúncias ${(complaints / RUNS).toFixed(1)} | atenção ${(heat / RUNS).toFixed(0)} | ` +
           `inquérito ${((100 * inquiries) / RUNS).toFixed(0)}% | busca ${((100 * raids) / RUNS).toFixed(0)}% | ` +
           `protegido ${Math.round(kept / RUNS)} | bloqueado ${Math.round(blocked / RUNS)} | ` +
-          `ocorrências ${(occurrences / RUNS).toFixed(1)} | distintas ${drawable.filter((id) => seen.has(id)).length}/${drawable.length} (${allIncidents.filter((id) => seen.has(id)).length}/${allIncidents.length}) | tragédia ${((100 * tragedies) / RUNS).toFixed(0)}%`,
+          `ocorrências ${(occurrences / RUNS).toFixed(1)} | distintas ${drawable.filter((id) => seen.has(id)).length}/${drawable.length} (${allIncidents.filter((id) => seen.has(id)).length}/${allIncidents.length}) | tragédia ${((100 * tragedies) / RUNS).toFixed(0)}% | crise ${((100 * crises) / RUNS).toFixed(0)}% | preso ${((100 * jailed) / RUNS).toFixed(0)}% | morto ${((100 * dead) / RUNS).toFixed(0)}% | exilado ${((100 * exiled) / RUNS).toFixed(0)}%`,
       );
     }
   }

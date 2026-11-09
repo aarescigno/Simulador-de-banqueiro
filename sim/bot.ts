@@ -33,6 +33,12 @@ export interface BotOptions {
    * Padrão: padrao.
    */
   incidents?: 'padrao' | 'paga' | 'recusa';
+  /**
+   * Resposta às crises (CRISE=...): `nada` deixa valer a padrão; `advogado` contrata o advogado
+   * do processo; `acordo` acerta com o delegado (e paga o jurado); `entregar` entrega o primo;
+   * `sumir` some. Sem caixa para a opção, ou sem ela no cartão, vale a padrão. Padrão: nada.
+   */
+  crisis?: 'nada' | 'advogado' | 'acordo' | 'entregar' | 'sumir';
   /** Guarda o caixa acima de POCKET_KEEP neste compartimento (POCKET=...). Padrão: nenhum. */
   pocket?: Compartment | null;
 }
@@ -53,6 +59,23 @@ const strongest: CollateralKind[] = ['inss', 'moto', 'celular'];
 function inquiryOption(s: GameState, d: Dilemma, o: BotOptions): DilemmaOption {
   const want = o.inquiry ?? 'correr';
   return (d.costs[want] ?? Infinity) <= s.cash ? want : 'correr';
+}
+
+const crisisChoice = {
+  processo: {
+    nada: 'nada',
+    advogado: 'advogado',
+    acordo: 'acordo',
+    entregar: 'entregar',
+    sumir: 'sumir',
+  },
+  jurado: { nada: 'ficar', advogado: 'ficar', acordo: 'pagar', entregar: 'ficar', sumir: 'sumir' },
+} as const;
+
+function crisisOption(s: GameState, d: Dilemma, o: BotOptions): DilemmaOption {
+  const first = defaultOption(d.kind);
+  const want = crisisChoice[d.kind as 'processo' | 'jurado'][o.crisis ?? 'nada'];
+  return (d.costs[want] ?? Infinity) <= s.cash ? want : first;
 }
 
 function incidentOption(s: GameState, d: Dilemma, o: BotOptions): DilemmaOption {
@@ -76,10 +99,18 @@ export function botDecide(state: GameState, o: BotOptions): GameState {
     if (excess >= min) s = decide(s, { type: 'stash', to: o.pocket, amount: excess });
   }
   for (const d of state.dilemmas) {
-    const option = d.kind === 'inquerito' ? inquiryOption(s, d, o) : incidentOption(s, d, o);
+    // Escolher `sumir` ou `fugir` encerra a crise ou a partida e esvazia os dilemas.
+    if (s.ended || !s.dilemmas.some((x) => x.id === d.id)) continue;
+    const option =
+      d.kind === 'inquerito'
+        ? inquiryOption(s, d, o)
+        : d.kind === 'processo' || d.kind === 'jurado'
+          ? crisisOption(s, d, o)
+          : incidentOption(s, d, o);
     s = decide(s, { type: 'choose', dilemmaId: d.id, option });
   }
-  for (const r of state.requests) {
+  if (s.ended) return s;
+  for (const r of [...s.requests]) {
     if (!canAccept(s, r.id) || r.amount > s.cash * (o.maxShare ?? 1)) {
       s = decide(s, { type: 'refuse', requestId: r.id });
       continue;
@@ -100,6 +131,9 @@ export function botDecide(state: GameState, o: BotOptions): GameState {
 export function playBot(start: GameState, weeks: number, o: BotOptions): GameState {
   let s = start;
   if (o.policy) s = decide(s, { type: 'setPolicy', collection: o.policy });
-  for (let i = 0; i < weeks; i++) s = step(botDecide(s, o)).state;
+  for (let i = 0; i < weeks && !s.ended; i++) {
+    s = botDecide(s, o);
+    if (!s.ended) s = step(s).state;
+  }
   return s;
 }

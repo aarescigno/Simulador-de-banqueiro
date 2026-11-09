@@ -330,3 +330,40 @@ export const incidents = {
   },
   cartao: { weight: 2, minWeek: 6, cooldown: 10 as number | null },
 };
+
+/**
+ * Crise do degrau 1: o processo (busca e apreensão que vira denúncia) e o jurado (a milícia
+ * cobra a recusa). Termina em preso, morto ou exilado, ou o jogador escapa. Uma crise por vez.
+ */
+export const crisis = {
+  /** O processo abre na busca e apreensão se as buscas somarem isto ou mais... */
+  raidsForTrial: 2,
+  /** ...ou se a evidência daquela resolução do inquérito for isto ou mais. */
+  evidenceForTrial: 60,
+  /** Semanas até o julgamento. */
+  trialWeeks: 6,
+  /** Chance de condenação no julgamento, sem advogado. */
+  prisonChance: 0.7,
+  /** Advogado de defesa: custo e a chance de condenação com ele. */
+  lawyer: { cost: 8_000, prisonChance: 0.15 },
+  /**
+   * Acordo com o delegado: max(min, cashShare × caixa) × growth das propinas já pagas,
+   * arredondado a 100 (a metade com mesada em dia). Depois, a atenção fica em heatAfter.
+   */
+  deal: { min: 8_000, cashShare: 0.4, mesadaDiscount: 0.5, heatAfter: 40 },
+  /** Entregar o primo: o medo cai para esta fração e a atenção fica em heatAfter. */
+  snitch: { fearAfter: 0.3, heatAfter: 30 },
+  /** Sumir por uns tempos: semanas fora. */
+  vanish: { weeks: 8 },
+  /** Exílio: fração do caixa que vai na mala. */
+  exile: { cashShare: 0.5 },
+  /**
+   * Jurado: semanas entre a segunda recusa à milícia e o recado, duração, chance semanal de
+   * morte ao ficar, fração do caixa para pagar e a parte da milícia depois.
+   */
+  hit: { delay: 4, weeks: 4, deathChance: 0.12, payShare: 0.6, militiaRate: 0.2 },
+  /** Aposentar vale a partir desta semana. */
+  retireFromWeek: 20,
+  /** Absolvido: a atenção cai para esta fração. */
+  acquittedHeatAfter: 0.5,
+};

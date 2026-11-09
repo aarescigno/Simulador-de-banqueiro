@@ -305,7 +305,7 @@ describe('bot', () => {
         collateral: seed % 2 === 0,
         pocket: (['own', 'laranja', 'offshore', null] as const)[seed % 4],
       });
-      expect(s.week).toBe(51);
+      expect(s.week).toBe(s.ended ? s.ended.week : 51);
       expect(Number.isInteger(s.cash)).toBe(true);
       expect(s.cash).toBeGreaterThanOrEqual(0);
       for (const l of s.loans) {
