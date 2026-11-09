@@ -5,6 +5,7 @@ import { money, percent } from '../../content/format';
 import { ui } from '../../content/ui';
 import {
   decide,
+  isPrimoOut,
   levelFor,
   quote,
   type CollateralKind,
@@ -201,7 +202,7 @@ function LoanRow({
   state: GameState;
   update: (s: GameState) => void;
 }) {
-  const level = l.status === 'active' ? levelFor(state.policy, l) : null;
+  const level = l.status === 'active' ? levelFor(state.policy, l, isPrimoOut(state)) : null;
   let status: string;
   let tone = 'dim';
   if (l.status === 'paid') {

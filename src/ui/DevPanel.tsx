@@ -1,12 +1,15 @@
 import { useState } from 'preact/hooks';
 import {
   advanceWeeks,
+  allIncidents,
+  devForceIncident,
   devGiveMoney,
   exportSave,
   hiddenVariables,
   seedFrom,
   type GameState,
 } from '../engine';
+import { incidentNames } from '../content/incidents';
 import { ui } from '../content/ui';
 import { copyText } from './clipboard';
 
@@ -22,6 +25,8 @@ export function DevPanel({ state, update, onNewGame, onClose }: Props) {
   const [amount, setAmount] = useState('10000');
   const [weeks, setWeeks] = useState('4');
   const [copied, setCopied] = useState(false);
+  const [incident, setIncident] = useState<string>(allIncidents[0]!);
+  const [forceError, setForceError] = useState('');
 
   return (
     <div class="overlay" role="dialog" aria-modal="true">
@@ -72,6 +77,35 @@ export function DevPanel({ state, update, onNewGame, onClose }: Props) {
                 {ui.dev.advance}
               </button>
             </div>
+
+            <label class="small dim">{ui.dev.forceIncident}</label>
+            <div class="row">
+              <select
+                class="field grow"
+                value={incident}
+                onChange={(e) => setIncident(e.currentTarget.value)}
+              >
+                {allIncidents.map((id) => (
+                  <option key={id} value={id}>
+                    {incidentNames[id]}
+                  </option>
+                ))}
+              </select>
+              <button
+                class="btn"
+                onClick={() => {
+                  try {
+                    update(devForceIncident(state, incident as (typeof allIncidents)[number]));
+                    setForceError('');
+                  } catch (e) {
+                    setForceError(e instanceof Error ? e.message : String(e));
+                  }
+                }}
+              >
+                {ui.dev.force}
+              </button>
+            </div>
+            {forceError && <p class="small red">{forceError}</p>}
 
             <h3>{ui.dev.hidden}</h3>
             <pre class="code">{JSON.stringify(hiddenVariables(state), null, 1)}</pre>

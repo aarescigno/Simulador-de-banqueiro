@@ -134,19 +134,6 @@ export const ui = {
   },
 
   dilemma: {
-    title: 'Inquérito',
-    body: 'A delegacia abriu inquérito por usura. O escrivão deu a entender que papel às vezes some.',
-    options: {
-      pagar: { label: 'Molhar a mão', text: 'O inquérito some. A atenção fica, e o preço sobe.' },
-      advogado: {
-        label: 'Contratar advogado',
-        text: (weeks: number) => `${weeks} semanas de inquérito, com defesa.`,
-      },
-      correr: {
-        label: 'Deixar correr',
-        text: (weeks: number) => `${weeks} semanas. Depende do que acharem.`,
-      },
-    },
     noCash: 'Caixa não cobre.',
     decideFirst: 'Decida antes de avançar.',
   },
@@ -202,6 +189,8 @@ export const ui = {
     noGame: 'Sem partida em andamento.',
     copyState: 'Copiar estado',
     copied: 'Estado copiado. Cole na issue.',
+    forceIncident: 'Forçar ocorrência',
+    force: 'Forçar',
     close: 'Fechar',
     report: (version: string, seed: number, week: number, save: string) =>
       `Agiota S.A. ${version}\nsemente: ${seed}\nsemana: ${week}\nsave: ${save}`,

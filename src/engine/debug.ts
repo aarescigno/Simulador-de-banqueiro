@@ -1,4 +1,4 @@
-import { hazard, levelFor, payChance } from './agiota';
+import { hazard, isPrimoOut, levelFor, payChance, shockDelta } from './agiota';
 import { betrayChance, protectedWealth } from './pocket';
 import type { GameState } from './state';
 
@@ -28,6 +28,11 @@ export function hiddenVariables(state: GameState) {
       protegido: protectedWealth(state),
       chanceTraicao: r3(betrayChance(state.pocket.laranja)),
     },
+    ocorrencias: {
+      ...state.incidents,
+      choque: shockDelta(state),
+      primoFora: isPrimoOut(state),
+    },
     politica: state.policy.collection,
     requests: state.requests.map(
       (r) => `${r.debtor.short}: risco ${r.risk}, topa até ${r.maxRate}%, paciência ${r.patience}`,
@@ -37,9 +42,9 @@ export function hiddenVariables(state: GameState) {
       .map(
         (l) =>
           `${l.debtor.short}: risco ${l.risk}, quebrou ${l.broke ? 'sim' : 'não'}, ` +
-          `nível ${levelFor(state.policy, l) ?? '-'}, ` +
-          `paga ${r3(payChance(l, { level: levelFor(state.policy, l), fear: state.fear }))}, ` +
-          `quebra ${r3(hazard(l, levelFor(state.policy, l)))}`,
+          `nível ${levelFor(state.policy, l, isPrimoOut(state)) ?? '-'}, ` +
+          `paga ${r3(payChance(l, { level: levelFor(state.policy, l, isPrimoOut(state)), fear: state.fear, shock: shockDelta(state) }))}, ` +
+          `quebra ${r3(hazard(l, levelFor(state.policy, l, isPrimoOut(state))))}`,
       ),
   };
 }

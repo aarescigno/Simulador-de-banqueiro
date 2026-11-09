@@ -1,5 +1,5 @@
 // Atenção policial, inquérito, busca e apreensão, e o dilema do inquérito.
-import { pocket as pocketParams, police } from '../content/params';
+import { incidents, pocket as pocketParams, police } from '../content/params';
 import type { Rng } from './rng';
 import type {
   Dilemma,
@@ -8,10 +8,23 @@ import type {
   GameState,
   HeatBand,
   ComplaintSource,
+  Loan,
 } from './state';
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 const meter = (x: number) => clamp(x, 0, 100);
+/** Soma direto na atenção (não é denúncia), entre 0 e 100. */
+export function addHeat(state: GameState, delta: number): void {
+  state.police.heat = meter(state.police.heat + delta);
+}
+
+/** Perde o empréstimo (busca, sumiço, tragédia): o saldo vira baixa. Muta o estado (cópia). */
+export function loseLoan(state: GameState, loan: Loan): void {
+  loan.status = 'lost';
+  loan.endWeek = state.week;
+  state.stats.writtenOff += loan.totalDue - loan.totalPaid;
+}
+
 const round100 = (x: number) => Math.round(x / 100) * 100;
 
 const bandOrder: HeatBand[] = ['baixa', 'media', 'alta'];
@@ -65,9 +78,7 @@ function raid(state: GameState, rng: Rng, events: GameEvent[]): void {
     if (loan.status !== 'active') continue;
     const evidence = loan.collateral?.kind === 'inss';
     if (!(evidence || rng.chance(r.loanLoss))) continue;
-    loan.status = 'lost';
-    loan.endWeek = state.week;
-    state.stats.writtenOff += loan.totalDue - loan.totalPaid;
+    loseLoan(state, loan);
     lost.push(loan.debtor.short);
   }
   const pk = state.pocket;
@@ -137,23 +148,19 @@ export function tickPolice(
   }
 
   if (state.week < p.cooldownUntil) return;
-  const chance = police.inquiryChance[band];
+  const factor =
+    (state.incidents.mesada > 0 ? incidents.inquiryFactor.mesada : 1) *
+    (state.week < state.incidents.vereadorUntil ? incidents.inquiryFactor.vereador : 1);
+  const chance = police.inquiryChance[band] * factor;
   if (chance > 0 && rng.chance(chance)) openInquiry(state, events);
 }
 
-/** Aplica a escolha do dilema. Muta o estado (cópia); devolve o evento, se houver. */
-export function applyChoice(
+/** Escolha do dilema do inquérito. Muta o estado (cópia); devolve o evento, se houver. */
+export function applyInquiryChoice(
   state: GameState,
-  dilemmaId: number,
   option: DilemmaOption,
+  cost: number,
 ): GameEvent | null {
-  const dilemma = state.dilemmas.find((d) => d.id === dilemmaId);
-  if (!dilemma) throw new Error(`Dilema ${dilemmaId} não existe.`);
-  const cost = dilemma.costs[option];
-  if (cost === undefined) throw new Error('Opção inválida.');
-  if (cost > state.cash) throw new Error('Caixa insuficiente.');
-  state.dilemmas = state.dilemmas.filter((d) => d.id !== dilemmaId);
-  state.cash -= cost;
   if (option === 'pagar') {
     state.police.inquiry = null;
     state.police.bribes += 1;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { params } from '../src/content/params';
+import { incidents, params } from '../src/content/params';
 import { collect, hazard, makeLoan, payChance, quote, tolerance } from '../src/engine/agiota';
 import { decide, newGame, step } from '../src/engine/game';
 import type { Rng } from '../src/engine/rng';
@@ -50,7 +50,9 @@ describe('pedidos', () => {
   it('chegam de 1 a 5 por semana, com ficha completa', () => {
     let s = newGame(5);
     for (let i = 0; i < 30; i++) {
-      expect(s.requests.length).toBeGreaterThanOrEqual(params.requests.perWeek[0]);
+      // Rival ativo tira um pedido por semana (ver tests/ocorrencias.test.ts).
+      const rival = s.week < s.incidents.rivalUntil ? incidents.rival.requestPenalty : 0;
+      expect(s.requests.length).toBeGreaterThanOrEqual(params.requests.perWeek[0] - rival);
       expect(s.requests.length).toBeLessThanOrEqual(params.requests.maxTotal);
       for (const r of s.requests) {
         expect(r.debtor.short).toBeTruthy();
@@ -311,11 +313,12 @@ describe('bot', () => {
         expect(l.paidInstallments).toBeLessThanOrEqual(l.weeks);
         if (l.status === 'paid') expect(l.totalPaid).toBe(l.totalDue);
       }
-      const { lent, received, recovered, seized, fees, betrayed } = s.stats;
+      const { lent, received, recovered, seized, fees, betrayed, spent, returned } = s.stats;
       const p = s.pocket;
       // O que saiu do caixa para o bolso: o que está lá, o que o laranja levou e as taxas.
+      // `spent` e `returned`: mesada, milícia, assalto, custos de opções e devolução de favores.
       expect(s.cash + p.own + p.laranja + p.offshore + p.blocked + betrayed + fees).toBe(
-        params.startingCash - lent + received + recovered - seized,
+        params.startingCash - lent + received + recovered - seized - spent + returned,
       );
       for (const l of s.loans) expect(l.recovered).toBeLessThanOrEqual(l.totalDue - l.totalPaid);
     }

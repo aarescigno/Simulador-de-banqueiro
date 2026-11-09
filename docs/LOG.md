@@ -6,6 +6,46 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-09 · Marco 1a · 19 ocorrências · PR #7
+
+**Feito**
+- Motor: `src/engine/incidents.ts` novo (16 sorteáveis e 3 de seguimento: gatilhos, `minWeek`, `cooldown`, opções por tipo em `dilemmaOptions`, `tickIncidents`, `applyChoice` despachando por `kind`, `resolveDefaults`, `devForceIncident`). `tickIncidents` roda depois do `tickPocket`: paga mesada e parte da milícia, dispara o agendado, e com chance 0,35 sorteia uma ocorrência pelo peso. Dilema entra para a semana seguinte; sem resposta, o `step` aplica a opção padrão (a primeira da tabela) no começo da semana.
+- `police.ts`: `loseLoan` e `addHeat` extraídos, `applyInquiryChoice` (o inquérito entra na mesma tabela), chance de inquérito × 0,4 com mesada e × 0,6 com vereador. `agiota.ts`: `levelFor` ganha `primoOut` (primo vira pressão), rival tira 1 pedido e 8 pontos de taxa máxima, `payChance` aceita `shock`.
+- Estado e save 6: `incidents` (`last`, `scheduled`, `mesada`, `militia`, `militiaRate`, `rivalUntil`, `primoOutUntil`, `vereadorUntil`, `shock`), `stats.spent` (mesada, milícia, assalto, cofre e custos de opções) e `stats.returned` (devolução de vereador e PM); migração 5→6. Eventos `incident`, `incidentChoice`, `mesadaFailed`, `militiaCut`.
+- Conteúdo: `src/content/incidents.ts` (cartões, linhas do Jornal, notícias, faixas, nomes para o dev); parâmetros no bloco `incidents` de `params.ts`; Jornal em `journal.ts`. Tragédia sempre com a nota do CVV (188).
+- Telas: `DilemmaCard` genérico (texto por `kind`, nome e valores interpolados, opção sem caixa desabilitada, opção indisponível some), faixas no Resumo (mesada, milícia, rival, primo fora), painel dev com `ocorrencias` nas variáveis ocultas e "Forçar ocorrência". Conferido em 360 px (`scrollWidth` 360) com três cartões empilhados, as quatro faixas e o Jornal com a tragédia e o CVV.
+- Testes: `tests/ocorrencias.test.ts` (53: elegibilidade, cada opção com efeito exato, padrão sem resposta, mesada, milícia, recado, rival em 200 sementes, primo fora, choque, rolar, bem, some, tragédia, cartão, vereador e PM, conteúdo, dev, bot com `paga` e `recusa`, migração). O invariante de caixa do bot soma `spent` e `returned`; o teste de pedidos por semana desconta o rival.
+- Sim: `INC=padrao|paga|recusa|0` e colunas de ocorrências por partida, distintas (sorteáveis e total) e tragédia.
+
+**Decisões**
+- Nenhum parâmetro mudou em relação ao plano: os cinco alvos bateram de primeira.
+- Tabela do sim (20% a.m., 8 sem, 100 rodadas, semana 30, `INQ=correr`, sem bolso):
+
+| execução | patrimônio | ocorrências/partida | distintas (sorteáveis) | tragédia |
+|---|---|---|---|---|
+| `INC=0`, padrão | 35,4 mil | 0 | 0/16 | 0% |
+| `INC=padrao`, padrão | 29,1 mil | 9,4 | 15/16 | 33% |
+| `INC=paga`, padrão | 22,7 mil | 9,9 | 15/16 | 27% |
+| `INC=recusa`, padrão | 30,4 mil | 10,1 | 15/16 | 34% |
+| `INC=padrao`, primo | 24,1 mil | 9,2 | 15/16 | 22% |
+
+- Alvos: 1) 9,4 ocorrências por partida (7 a 12). 2) 15 de 16 sorteáveis (≥ 14). 3) 29,1 / 35,4 = 82% (80 a 100%). 4) `paga` fica 22% abaixo de `padrao` (máximo +10%). 5) tragédia em 22% das partidas com política primo (≤ 25%). Alvos 3 e 5 têm pouca folga (2 e 3 pontos); uma mudança em `assalto` ou no peso da tragédia mexe neles.
+- "Ocorrências por partida" conta todo evento `incident`, seguimentos incluídos. `paga` escolhe a outra opção quando o caixa cobre (na milícia, paga); `recusa` fica na padrão (na milícia, recusa).
+- Dilema fica em `state.dilemmas` com `costs` só das opções disponíveis (rival sem `primo` quando o primo está fora) e `amount` congelado para o texto (preço da geladeira, mesada). `DilemmaOption` virou `string` e o `applyChoice` valida contra `costs`. A atenção das ocorrências soma direto em `police.heat` (0 a 100), sem virar denúncia.
+- Prazos `...Until` são a primeira semana sem o efeito; as faixas mostram `until − 1`.
+
+**Pendências**
+- A tragédia aparece em 1 de cada 3 partidas com política padrão; vale revisitar o peso quando houver os finais.
+- Nenhuma ocorrência termina a partida; milícia recusada duas vezes (`refusedTwice`) e primo fora ainda não têm continuação (item da crise).
+- Faixas do Resumo para vereador e choque (gás, décimo) não existem; só os quatro efeitos do plano.
+
+**Próximo passo**
+- Crise do degrau 1 e finais.
+
+Modelo: Opus (plano) + Sonnet, esforço médio (execução) — plano fechado com números e alvos do sim.
+
+---
+
 ## 2026-11-09 · Marco 1a · Bolso com 3 compartimentos · PR #6
 
 **Feito**

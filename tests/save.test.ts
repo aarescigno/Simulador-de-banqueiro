@@ -43,7 +43,7 @@ describe('migração', () => {
     }
     delete v1.stats.recovered;
     const migrated = deserialize(JSON.stringify(v1));
-    expect(migrated.saveVersion).toBe(5);
+    expect(migrated.saveVersion).toBe(6);
     expect(migrated.stats.recovered).toBe(0);
     for (const r of migrated.requests) {
       expect(r.assets[0]!.kind).toBe('celular');
@@ -70,7 +70,7 @@ describe('migração 2 → 3', () => {
     }
     delete v2.stats.forgiven;
     const m = deserialize(JSON.stringify(v2));
-    expect(m.saveVersion).toBe(5);
+    expect(m.saveVersion).toBe(6);
     expect(m.fear).toBe(0);
     expect(m.word).toBe(30);
     expect(m.complaints).toBe(0);
@@ -92,7 +92,7 @@ describe('migração 3 → 4', () => {
     delete v3.stats.seized;
     for (const r of v3.journal) delete r.heat;
     const m = deserialize(JSON.stringify(v3));
-    expect(m.saveVersion).toBe(5);
+    expect(m.saveVersion).toBe(6);
     expect(m.police).toEqual({ heat: 0, inquiry: null, cooldownUntil: 0, bribes: 0, raids: 0 });
     expect(m.dilemmas).toEqual([]);
     expect(m.stats.seized).toBe(0);
@@ -111,7 +111,7 @@ describe('migração 4 → 5', () => {
     delete v4.stats.fees;
     delete v4.stats.betrayed;
     const m = deserialize(JSON.stringify(v4));
-    expect(m.saveVersion).toBe(5);
+    expect(m.saveVersion).toBe(6);
     expect(m.pocket).toEqual({
       own: 0,
       laranja: 0,

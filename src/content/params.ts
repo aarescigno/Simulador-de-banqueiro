@@ -196,3 +196,134 @@ export const pocket = {
   /** Semanas que o bloqueio judicial dura (nova busca reinicia). */
   block: { weeks: 14 },
 };
+
+/**
+ * Ocorrências: delegado, milícia, rival, devedor que some e outras. No fim de cada semana, com
+ * chance `chance`, uma ocorrência elegível é sorteada pelo peso. Uma `Row` vale para as sorteáveis:
+ * peso, primeira semana em que pode sair e intervalo de repetição (null = acontece uma vez).
+ * Atenção mexida aqui não é denúncia: soma direto na atenção.
+ */
+export const incidents = {
+  /** Chance semanal de sortear uma ocorrência. */
+  chance: 0.35,
+  /** Multiplicadores da chance de inquérito: com mesada paga e com o vereador na mão. */
+  inquiryFactor: { mesada: 0.4, vereador: 0.6 },
+
+  delegado: {
+    weight: 3,
+    minWeek: 6,
+    cooldown: 12 as number | null,
+    mesada: 600,
+    heatRefuse: 10,
+    heatMesada: -10,
+    heatFail: 15,
+  },
+  milicia: {
+    weight: 3,
+    minWeek: 8,
+    cooldown: null as number | null,
+    minReceived: 10_000,
+    rate: 0.1,
+    fearPay: 5,
+    recadoWeeks: 3,
+  },
+  milicia_recado: { rate: 0.15, cashLoss: 0.4, fearFactor: 0.5, primoOutWeeks: 6 },
+  rival: {
+    weight: 3,
+    minWeek: 6,
+    cooldown: 15 as number | null,
+    weeks: 8,
+    requestPenalty: 1,
+    rateCut: 8,
+    heatPrimo: 15,
+    fearPrimo: 5,
+  },
+  rolar: {
+    weight: 4,
+    minWeek: 3,
+    cooldown: 4 as number | null,
+    minLate: 2,
+    maxCatchUp: 2,
+    extraWeeks: 3,
+  },
+  bem: {
+    weight: 3,
+    minWeek: 3,
+    cooldown: 6 as number | null,
+    minLate: 3,
+    recovery: 0.25,
+    fear: 1,
+    word: -2,
+    wordNews: -2,
+  },
+  pastor: {
+    weight: 2,
+    minWeek: 4,
+    cooldown: 12 as number | null,
+    cost: 1_000,
+    wordRefuse: -2,
+    wordGive: 6,
+    heatGive: -5,
+  },
+  vereador: {
+    weight: 2,
+    minWeek: 10,
+    cooldown: null as number | null,
+    cost: 5_000,
+    weeks: 20,
+    payChance: 0.4,
+  },
+  radio: {
+    weight: 2,
+    minWeek: 6,
+    cooldown: 10 as number | null,
+    minComplaints: 2,
+    heatIgnore: 8,
+    wordIgnore: -5,
+    cost: 1_500,
+    heatPay: -8,
+  },
+  fianca: {
+    weight: 3,
+    minWeek: 5,
+    cooldown: 12 as number | null,
+    cost: 2_000,
+    primoOutWeeks: 6,
+    heatLeave: 15,
+  },
+  pm: {
+    weight: 2,
+    minWeek: 8,
+    cooldown: 20 as number | null,
+    cost: 3_000,
+    heatRefuse: 5,
+    heatLend: -12,
+    weeks: 10,
+    payChance: 0.5,
+  },
+  assalto: {
+    weight: 2,
+    minWeek: 5,
+    cooldown: 15 as number | null,
+    minCash: 15_000,
+    cashLoss: 0.25,
+  },
+  some: { weight: 3, minWeek: 4, cooldown: 6 as number | null, minRisk: 0.5, word: -1 },
+  tragedia: {
+    weight: 1,
+    minWeek: 8,
+    cooldown: 20 as number | null,
+    minLate: 3,
+    word: -10,
+    heat: 20,
+  },
+  gas: { weight: 2, minWeek: 4, cooldown: 16 as number | null, payDelta: -0.06, weeks: 4 },
+  decimo: {
+    weight: 3,
+    minWeek: 20,
+    cooldown: null as number | null,
+    payDelta: 0.08,
+    weeks: 2,
+  },
+  cartao: { weight: 2, minWeek: 6, cooldown: 10 as number | null },
+};

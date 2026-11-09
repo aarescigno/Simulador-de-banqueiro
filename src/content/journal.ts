@@ -1,6 +1,7 @@
 // Texto do Jornal a partir dos eventos do motor. Voz de relatório, frases curtas.
 import type { ComplaintSource, GameEvent, HeatBand, Level, WeekReport } from '../engine/state';
 import { collateralText } from './collateral';
+import { dilemmaTexts, newsTexts, continuing } from './incidents';
 import { money, percent } from './format';
 import { params } from './params';
 
@@ -124,6 +125,18 @@ export function reportLines(r: WeekReport): string[] {
   }
   for (const e of ofType(ev, 'unblocked')) {
     lines.push(`A Justiça liberou o bloqueio: ${money(e.amount)} de volta em seu nome.`);
+  }
+
+  for (const e of ev) {
+    if (e.type === 'incident') {
+      const d = dilemmaTexts[e.id];
+      if (d) lines.push(d.body(e));
+      else lines.push(...(newsTexts[e.id]?.(e) ?? []));
+    } else if (e.type === 'incidentChoice') {
+      const line = dilemmaTexts[e.id]?.options[e.option]?.line?.(e);
+      if (line) lines.push(line);
+    } else if (e.type === 'militiaCut') lines.push(continuing.militiaCut(e.amount));
+    else if (e.type === 'mesadaFailed') lines.push(continuing.mesadaFailed);
   }
 
   for (const e of ofType(ev, 'heatRose')) lines.push(heatRoseText[e.band]);

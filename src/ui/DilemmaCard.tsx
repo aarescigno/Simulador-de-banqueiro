@@ -1,6 +1,6 @@
-import { decide, type Dilemma, type DilemmaOption, type GameState } from '../engine';
+import { decide, type Dilemma, type GameState } from '../engine';
 import { money } from '../content/format';
-import { police } from '../content/params';
+import { dilemmaTexts, type TextCtx } from '../content/incidents';
 import { ui } from '../content/ui';
 
 interface Props {
@@ -9,22 +9,19 @@ interface Props {
   update: (s: GameState) => void;
 }
 
-const order: DilemmaOption[] = ['pagar', 'advogado', 'correr'];
-
-function optionText(option: DilemmaOption): string {
-  const o = ui.dilemma.options;
-  if (option === 'pagar') return o.pagar.text;
-  return o[option].text(police.inquiry.weeks);
-}
-
 export function DilemmaCard({ dilemma, state, update }: Props) {
+  const text = dilemmaTexts[dilemma.kind];
+  if (!text) return null;
+  const loan = state.loans.find((l) => l.id === dilemma.loanId);
+  const ctx: TextCtx = { name: loan?.debtor.short, amount: dilemma.amount };
   return (
     <article class="card dilemma stack">
-      <h3 class="amber">{ui.dilemma.title}</h3>
-      <p>{ui.dilemma.body}</p>
-      {order.map((option) => {
+      <h3 class="amber">{text.title(ctx)}</h3>
+      <p>{text.body(ctx)}</p>
+      {Object.entries(text.options).map(([option, o]) => {
         const cost = dilemma.costs[option];
-        const label = ui.dilemma.options[option].label;
+        if (cost === undefined) return null;
+        const label = o.label(ctx);
         const afford = cost <= state.cash;
         return (
           <div key={option} class="stack tight">
@@ -35,9 +32,9 @@ export function DilemmaCard({ dilemma, state, update }: Props) {
                 update(decide(state, { type: 'choose', dilemmaId: dilemma.id, option }))
               }
             >
-              {cost > 0 ? `${label} · ${money(cost)}` : label}
+              {o.showCost && cost > 0 ? `${label} · ${money(cost)}` : label}
             </button>
-            <span class="small dim">{afford ? optionText(option) : ui.dilemma.noCash}</span>
+            <span class="small dim">{afford ? o.hint?.(ctx) : ui.dilemma.noCash}</span>
           </div>
         );
       })}
