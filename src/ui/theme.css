@@ -469,3 +469,17 @@ select.field {
 .phrase {
   margin: 0;
 }
+
+/* Faixas de efeitos contínuos */
+.strips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.strip {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  overflow-wrap: anywhere;
+}

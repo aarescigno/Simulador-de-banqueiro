@@ -1,5 +1,7 @@
 // Relatório rápido de balanço: npx vite-node sim/balance.ts (COLLATERAL=1 para exigir garantia)
 import { newGame, protectedWealth, type Compartment, type DilemmaOption } from '../src/engine';
+import { allIncidents, drawable } from '../src/engine';
+import { incidents as incidentParams } from '../src/content/params';
 import { playBot, policies } from './bot';
 
 const RUNS = Number(process.env.RUNS ?? 100);
@@ -11,6 +13,10 @@ const collateral = process.env.COLLATERAL === '1';
 const inquiry = (process.env.INQ ?? 'correr') as DilemmaOption;
 /** POCKET=own|laranja|offshore: o bot guarda o caixa acima de R$ 15 mil. Padrão: nenhum. */
 const pocket = (process.env.POCKET || null) as Compartment | null;
+/** INC=padrao|paga|recusa: resposta do bot às ocorrências; INC=0 zera a chance semanal delas. */
+const incMode = process.env.INC ?? 'padrao';
+if (incMode === '0') incidentParams.chance = 0;
+const incidents = (incMode === '0' ? 'padrao' : incMode) as 'padrao' | 'paga' | 'recusa';
 const policyNames = (process.env.POLICY ?? 'padrao').split(',');
 for (const policyName of policyNames) {
   for (const monthlyRate of (process.env.RATES ?? '5,10,20,30,50,80').split(',').map(Number)) {
@@ -26,6 +32,9 @@ for (const policyName of policyNames) {
       let raids = 0;
       let kept = 0;
       let blocked = 0;
+      let occurrences = 0;
+      let tragedies = 0;
+      const seen = new Set<string>();
       for (let seed = 1; seed <= RUNS; seed++) {
         const s = playBot(newGame(seed), WEEKS, {
           monthlyRate,
@@ -33,6 +42,7 @@ for (const policyName of policyNames) {
           collateral,
           policy: policies[policyName],
           inquiry,
+          incidents,
           pocket,
         });
         fear += s.fear;
@@ -42,6 +52,12 @@ for (const policyName of policyNames) {
         const events = s.journal.flatMap((r) => r.events);
         if (events.some((e) => e.type === 'inquiryOpened')) inquiries += 1;
         if (events.some((e) => e.type === 'raid')) raids += 1;
+        for (const e of events) {
+          if (e.type !== 'incident') continue;
+          occurrences += 1;
+          seen.add(e.id);
+        }
+        if (events.some((e) => e.type === 'incident' && e.id === 'tragedia')) tragedies += 1;
         // Valor contábil conservador: o que falta receber, limitado ao principal, só de quem está em dia.
         kept += protectedWealth(s);
         blocked += s.pocket.blocked;
@@ -62,7 +78,8 @@ for (const policyName of policyNames) {
           `calote: ${((100 * defaults) / loans).toFixed(1)}% | ` +
           `medo ${(fear / RUNS).toFixed(0)} | boca ${(word / RUNS).toFixed(0)} | denúncias ${(complaints / RUNS).toFixed(1)} | atenção ${(heat / RUNS).toFixed(0)} | ` +
           `inquérito ${((100 * inquiries) / RUNS).toFixed(0)}% | busca ${((100 * raids) / RUNS).toFixed(0)}% | ` +
-          `protegido ${Math.round(kept / RUNS)} | bloqueado ${Math.round(blocked / RUNS)}`,
+          `protegido ${Math.round(kept / RUNS)} | bloqueado ${Math.round(blocked / RUNS)} | ` +
+          `ocorrências ${(occurrences / RUNS).toFixed(1)} | distintas ${drawable.filter((id) => seen.has(id)).length}/${drawable.length} (${allIncidents.filter((id) => seen.has(id)).length}/${allIncidents.length}) | tragédia ${((100 * tragedies) / RUNS).toFixed(0)}%`,
       );
     }
   }

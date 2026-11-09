@@ -1,4 +1,5 @@
 import { collection } from '../content/params';
+import { emptyIncidents } from './incidents';
 import { SAVE_VERSION, type GameState } from './state';
 
 const PREFIX = 'AGIOTA-SA:';
@@ -45,6 +46,12 @@ const migrations: Record<number, Migration> = {
     ...old,
     pocket: { own: 0, laranja: 0, offshore: 0, blocked: 0, blockedUntil: 0, doleiro: false },
     stats: { ...(old.stats as Obj), fees: 0, betrayed: 0 },
+  }),
+  // 5 → 6: ocorrências zeradas e contadores de gasto.
+  5: (old) => ({
+    ...old,
+    incidents: emptyIncidents(),
+    stats: { ...(old.stats as Obj), spent: 0, returned: 0 },
   }),
 };
 

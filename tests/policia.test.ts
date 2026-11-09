@@ -151,7 +151,7 @@ describe('dilema', () => {
     const s = opened();
     const d = s.dilemmas[0]!;
     const after = decide(s, { type: 'choose', dilemmaId: d.id, option: 'pagar' });
-    expect(after.cash).toBe(20_000 - d.costs.pagar);
+    expect(after.cash).toBe(20_000 - d.costs.pagar!);
     expect(after.police.inquiry).toBeNull();
     expect(after.police.bribes).toBe(1);
     expect(after.police.cooldownUntil).toBe(after.week + police.cooldown);

@@ -7,7 +7,9 @@ import {
   type CollateralKind,
   type Compartment,
   type CollectionPolicy,
+  type Dilemma,
   type DilemmaOption,
+  defaultOption,
   type GameState,
 } from '../src/engine';
 import { pocket } from '../src/content/params';
@@ -25,6 +27,12 @@ export interface BotOptions {
   policy?: CollectionPolicy;
   /** Resposta ao dilema do inquérito (INQ=...); sem caixa para a opção, corre. Padrão: correr. */
   inquiry?: DilemmaOption;
+  /**
+   * Resposta às outras ocorrências (INC=...): `padrao` deixa valer a opção padrão; `paga` escolhe
+   * a outra opção quando o caixa cobre (na milícia, paga); `recusa` recusa tudo (na milícia, recusa).
+   * Padrão: padrao.
+   */
+  incidents?: 'padrao' | 'paga' | 'recusa';
   /** Guarda o caixa acima de POCKET_KEEP neste compartimento (POCKET=...). Padrão: nenhum. */
   pocket?: Compartment | null;
 }
@@ -42,6 +50,23 @@ export const policies: Record<string, CollectionPolicy> = {
 
 const strongest: CollateralKind[] = ['inss', 'moto', 'celular'];
 
+function inquiryOption(s: GameState, d: Dilemma, o: BotOptions): DilemmaOption {
+  const want = o.inquiry ?? 'correr';
+  return (d.costs[want] ?? Infinity) <= s.cash ? want : 'correr';
+}
+
+function incidentOption(s: GameState, d: Dilemma, o: BotOptions): DilemmaOption {
+  const options = Object.keys(d.costs);
+  const first = defaultOption(d.kind);
+  const militia = d.kind === 'milicia' || d.kind === 'milicia_recado';
+  const mode = o.incidents ?? 'padrao';
+  if (mode === 'padrao') return first;
+  if (militia) return mode === 'paga' ? 'pagar' : 'recusar';
+  if (mode === 'recusa') return first;
+  const other = options.filter((x) => x !== first && d.costs[x]! <= s.cash).pop();
+  return other ?? first;
+}
+
 /** Responde a todos os pedidos da semana. */
 export function botDecide(state: GameState, o: BotOptions): GameState {
   let s = state;
@@ -51,8 +76,7 @@ export function botDecide(state: GameState, o: BotOptions): GameState {
     if (excess >= min) s = decide(s, { type: 'stash', to: o.pocket, amount: excess });
   }
   for (const d of state.dilemmas) {
-    const want = o.inquiry ?? 'correr';
-    const option = d.costs[want] <= s.cash ? want : 'correr';
+    const option = d.kind === 'inquerito' ? inquiryOption(s, d, o) : incidentOption(s, d, o);
     s = decide(s, { type: 'choose', dilemmaId: d.id, option });
   }
   for (const r of state.requests) {

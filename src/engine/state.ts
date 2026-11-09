@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export interface Debtor {
   /** Nome completo, para a ficha. */
@@ -103,15 +103,68 @@ export interface Police {
   raids: number;
 }
 
-export type DilemmaKind = 'inquerito';
-export type DilemmaOption = 'pagar' | 'advogado' | 'correr';
+/** As 19 ocorrências: 16 sorteáveis e 3 de seguimento (agendadas). */
+export type IncidentId =
+  | 'delegado'
+  | 'milicia'
+  | 'milicia_recado'
+  | 'rival'
+  | 'rolar'
+  | 'bem'
+  | 'pastor'
+  | 'vereador'
+  | 'vereador_paga'
+  | 'radio'
+  | 'fianca'
+  | 'pm'
+  | 'pm_paga'
+  | 'assalto'
+  | 'some'
+  | 'tragedia'
+  | 'gas'
+  | 'decimo'
+  | 'cartao';
 
-/** Escolha pendente do jogador. `costs` é o preço de cada opção, congelado na abertura. */
+export type DilemmaKind = 'inquerito' | IncidentId;
+/** Opção de um dilema; as válidas por tipo ficam em `dilemmaOptions` (src/engine/incidents.ts). */
+export type DilemmaOption = string;
+
+/**
+ * Escolha pendente do jogador. `costs` é o preço de cada opção disponível, congelado na abertura;
+ * opção que não está em `costs` não existe nesta ocorrência. `amount` é um valor só para o texto.
+ */
 export interface Dilemma {
   id: number;
   kind: DilemmaKind;
   week: number;
+  loanId?: number;
+  amount?: number;
   costs: Record<DilemmaOption, number>;
+}
+
+export type MilitiaState = 'none' | 'paying' | 'refused' | 'refusedTwice';
+
+export interface ScheduledIncident {
+  week: number;
+  id: IncidentId;
+  loanId?: number;
+}
+
+/** Ocorrências: histórico, agenda e efeitos contínuos. Os prazos `...Until` são a primeira semana sem o efeito. */
+export interface Incidents {
+  /** Última semana em que cada ocorrência aconteceu. */
+  last: Partial<Record<IncidentId, number>>;
+  scheduled: ScheduledIncident[];
+  /** Mesada do delegado, em R$ por semana; 0 = não paga. */
+  mesada: number;
+  militia: MilitiaState;
+  /** Fração do recebido na semana que a milícia leva. */
+  militiaRate: number;
+  rivalUntil: number;
+  primoOutUntil: number;
+  vereadorUntil: number;
+  /** Choque de renda: soma na chance de pagar de quem não quebrou. */
+  shock: { until: number; payDelta: number };
 }
 
 export type Compartment = 'own' | 'laranja' | 'offshore';
@@ -165,6 +218,16 @@ export type GameEvent =
   | { type: 'ownBlocked'; amount: number; until: number }
   | { type: 'unblocked'; amount: number }
   | { type: 'settled'; name: string; profit: number }
+  | { type: 'incident'; id: IncidentId; name?: string; amount?: number }
+  | {
+      type: 'incidentChoice';
+      id: DilemmaKind;
+      option: DilemmaOption;
+      name?: string;
+      amount?: number;
+    }
+  | { type: 'mesadaFailed' }
+  | { type: 'militiaCut'; amount: number }
   | {
       type: 'defaulted';
       name: string;
@@ -204,6 +267,10 @@ export interface Stats {
   fees: number;
   /** Levado por laranjas que sumiram. */
   betrayed: number;
+  /** Saiu do caixa por dilemas, mesada, milícia e assaltos. */
+  spent: number;
+  /** Voltou ao caixa de favores (vereador e PM). */
+  returned: number;
 }
 
 export interface GameState {
@@ -229,6 +296,8 @@ export interface GameState {
   police: Police;
   /** O que está fora do caixa. */
   pocket: Pocket;
+  /** Ocorrências: histórico, agenda e efeitos contínuos. */
+  incidents: Incidents;
   /** Escolhas pendentes; sem resposta até fechar a semana, valem a opção padrão. */
   dilemmas: Dilemma[];
   /** Fila de eventos agendados, em ordem de semana. */

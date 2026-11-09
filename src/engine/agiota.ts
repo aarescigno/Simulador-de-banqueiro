@@ -1,5 +1,5 @@
 // Degrau 1: pedidos, empréstimos e parcelas semanais.
-import { collection, params, police, WEEKS_PER_MONTH } from '../content/params';
+import { collection, incidents, params, police, WEEKS_PER_MONTH } from '../content/params';
 import { firstNames, professions, reasons, surnames, titleChance, titles } from '../content/people';
 import { complain } from './police';
 import type { Rng } from './rng';
@@ -89,16 +89,29 @@ const levelOrder: Level[] = ['conversa', 'pressao', 'primo'];
 export function levelFor(
   policy: { collection: CollectionPolicy },
   loan: Pick<Loan, 'missedStreak' | 'override'>,
+  primoOut = false,
 ): Level | null {
   if (loan.missedStreak < 1) return null;
-  if (loan.override) return loan.override;
-  let level: Level | null = null;
-  for (const l of levelOrder) {
-    const t = policy.collection[l];
-    if (t !== null && t <= loan.missedStreak) level = l;
+  let level: Level | null = loan.override;
+  if (!level) {
+    for (const l of levelOrder) {
+      const t = policy.collection[l];
+      if (t !== null && t <= loan.missedStreak) level = l;
+    }
   }
-  return level;
+  // Primo fora (preso, sumido): onde pediria o primo, vale a pressão.
+  return primoOut && level === 'primo' ? 'pressao' : level;
 }
+
+/** Primo fora de ação nesta semana? */
+export const isPrimoOut = (state: GameState) => state.week < state.incidents.primoOutUntil;
+
+/** Rival ativo nesta semana? */
+export const isRivalActive = (state: GameState) => state.week < state.incidents.rivalUntil;
+
+/** Choque de renda desta semana: soma na chance de pagar. */
+export const shockDelta = (state: GameState) =>
+  state.week < state.incidents.shock.until ? state.incidents.shock.payDelta : 0;
 
 export const clampMeter = (x: number) => clamp(x, 0, 100);
 
@@ -118,12 +131,14 @@ export function hazard(
 export interface PayContext {
   level?: Level | null;
   fear?: number;
+  /** Choque de renda da semana (gás, décimo terceiro). */
+  shock?: number;
 }
 
 /** Chance de pagar a parcela nesta semana. */
 export function payChance(
   loan: Pick<Loan, 'risk' | 'monthlyRate' | 'broke'> & { collateral?: Collateral | null },
-  { level = null, fear = 0 }: PayContext = {},
+  { level = null, fear = 0, shock = 0 }: PayContext = {},
 ): number {
   const p = params.payment;
   const kind = loan.collateral?.kind;
@@ -139,7 +154,8 @@ export function payChance(
       p.rateWeight * (loan.monthlyRate / 100) +
       bonus +
       (lv?.payBonus ?? 0) +
-      collection.fear.payBonus * (fear / 100),
+      collection.fear.payBonus * (fear / 100) +
+      shock,
     p.min,
     1,
   );
@@ -166,10 +182,10 @@ export function collect(
     complain(state, rng, events, collection.inss.complaintPerWeek, 'inss', name);
   }
 
-  const level = levelFor(state.policy, loan);
+  const level = levelFor(state.policy, loan, isPrimoOut(state));
   loan.lastLevel = level;
   if (!loan.broke && rng.chance(hazard(loan, level))) loan.broke = true;
-  const pays = rng.chance(payChance(loan, { level, fear }));
+  const pays = rng.chance(payChance(loan, { level, fear, shock: shockDelta(state) }));
 
   if (level) {
     const lv = collection.levels[level];
@@ -283,7 +299,12 @@ export function generateRequests(state: GameState, rng: Rng): LoanRequest[] {
   ]);
   const base = rng.int(perWeek[0], perWeek[1]) + Math.floor(state.word / wordDivisor + rng.next());
   const penalty = state.police.inquiry ? police.inquiry.requestPenalty : 0;
-  const count = Math.max(0, Math.min(maxTotal, base) - penalty);
+  const rival = isRivalActive(state);
+  const count = Math.max(
+    0,
+    Math.min(maxTotal, base) - penalty - (rival ? incidents.rival.requestPenalty : 0),
+  );
+  const rateCut = rival ? incidents.rival.rateCut : 0;
   const fearRisk = collection.fear.riskBonus * (state.fear / 100);
   const out: LoanRequest[] = [];
   for (let i = 0; i < count; i++) {
@@ -301,7 +322,7 @@ export function generateRequests(state: GameState, rng: Rng): LoanRequest[] {
       reason: reason.text,
       risk,
       assets,
-      maxRate: Math.round(neg.base + neg.riskWeight * risk + rng.next() * neg.spread),
+      maxRate: Math.round(neg.base + neg.riskWeight * risk + rng.next() * neg.spread) - rateCut,
       patience: rng.int(neg.patience[0], neg.patience[1]),
     });
   }

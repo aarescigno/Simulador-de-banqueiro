@@ -10,8 +10,10 @@ import {
   validTerms,
   type LoanTerms,
 } from './agiota';
+import { emptyIncidents } from './incidents';
 import { emptyPocket, stash, tickPocket, unstash } from './pocket';
-import { applyChoice, complain, heatBand, tickPolice } from './police';
+import { applyChoice, resolveDefaults, tickIncidents } from './incidents';
+import { complain, heatBand, tickPolice } from './police';
 import { createRng, type Rng } from './rng';
 import {
   SAVE_VERSION,
@@ -58,6 +60,8 @@ export function newGame(seed: number): GameState {
       seized: 0,
       fees: 0,
       betrayed: 0,
+      spent: 0,
+      returned: 0,
     },
     policy: { collection: { ...collection.defaultPolicy } },
     fear: 0,
@@ -65,6 +69,7 @@ export function newGame(seed: number): GameState {
     complaints: 0,
     police: { heat: 0, inquiry: null, cooldownUntil: 0, bribes: 0, raids: 0 },
     pocket: emptyPocket(),
+    incidents: emptyIncidents(),
     dilemmas: [],
     queue: [{ week: 1, event: { type: 'gameStarted' } }],
     journal: [],
@@ -183,8 +188,8 @@ export function step(
   const events: GameEvent[] = [];
 
   const bandBefore = heatBand(state.police.heat);
-  // Dilema sem resposta: vale a opção padrão (correr), que não tem custo nem evento.
-  state.dilemmas = [];
+  // Dilema sem resposta: vale a opção padrão de cada um.
+  resolveDefaults(state, events);
 
   const due = state.queue.filter((q) => q.week <= state.week);
   state.queue = state.queue.filter((q) => q.week > state.week);
@@ -203,6 +208,7 @@ export function step(
 
   tickPolice(state, rng, events, bandBefore);
   tickPocket(state, rng, events);
+  tickIncidents(state, rng, events);
 
   state.journal.push({
     week: state.week,

@@ -2,6 +2,7 @@ import { heatBand, bandRank, protectedWealth, receivable, step, type HeatBand } 
 import { DilemmaCard } from '../DilemmaCard';
 import { collection } from '../../content/params';
 import { money } from '../../content/format';
+import { strips } from '../../content/incidents';
 import { reportLines } from '../../content/journal';
 import { ui } from '../../content/ui';
 import type { TabProps } from '../Game';
@@ -17,6 +18,13 @@ export function Summary({ state, update, goTo }: TabProps) {
   const bandBefore = heatBand(before?.heat ?? 0);
   const inquiry = state.police.inquiry;
   const pending = state.dilemmas.length > 0;
+  const inc = state.incidents;
+  const effects = [
+    inc.mesada > 0 ? strips.mesada(inc.mesada) : null,
+    inc.militia === 'paying' ? strips.militia(inc.militiaRate) : null,
+    state.week < inc.rivalUntil ? strips.rival(inc.rivalUntil - 1) : null,
+    state.week < inc.primoOutUntil ? strips.primoOut(inc.primoOutUntil - 1) : null,
+  ].filter((t): t is string => t !== null);
   const late = active.filter((l) => l.missedStreak > 0).length;
 
   return (
@@ -62,6 +70,16 @@ export function Summary({ state, update, goTo }: TabProps) {
           <span class="dim small">{ui.meters.heat.text}</span>
         </div>
       </div>
+
+      {effects.length > 0 && (
+        <div class="strips">
+          {effects.map((t) => (
+            <span key={t} class="strip small">
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
 
       {inquiry && (
         <div class="inquiry-bar small amber">
