@@ -1,5 +1,5 @@
 // Texto do Jornal a partir dos eventos do motor. Voz de relatório, frases curtas.
-import type { ComplaintSource, GameEvent, Level, WeekReport } from '../engine/state';
+import type { ComplaintSource, GameEvent, HeatBand, Level, WeekReport } from '../engine/state';
 import { collateralText } from './collateral';
 import { money, percent } from './format';
 import { params } from './params';
@@ -37,6 +37,12 @@ const complaintText: Record<ComplaintSource, (name?: string) => string> = {
   celular: () => 'Celular tomado virou queixa na delegacia.',
   inss: (n) => `A família de ${n} foi ao INSS perguntar pelo cartão do benefício.`,
   ambiente: () => 'Alguém comentou com a ronda que no bairro todo mundo paga em dia.',
+};
+
+const heatRoseText: Record<HeatBand, string> = {
+  baixa: 'A ronda deixou de passar na sua rua.',
+  media: 'A ronda passou duas vezes na sua rua esta semana.',
+  alta: 'Viatura parada na esquina. Ninguém desceu.',
 };
 
 const levels: (Level | null)[] = [null, 'conversa', 'pressao', 'primo'];
@@ -87,6 +93,25 @@ export function reportLines(r: WeekReport): string[] {
   }
 
   for (const e of ofType(ev, 'complaint')) lines.push(complaintText[e.source](e.name));
+
+  for (const e of ofType(ev, 'heatRose')) lines.push(heatRoseText[e.band]);
+  if (ofType(ev, 'inquiryOpened').length) {
+    lines.push('Inquérito aberto na delegacia, por usura. Seu nome está nele.');
+  }
+  for (const e of ofType(ev, 'bribed')) {
+    lines.push(`Um papel sumiu na delegacia. Custo: ${money(e.amount)}.`);
+  }
+  for (const e of ofType(ev, 'lawyerHired')) {
+    lines.push(`Advogado contratado: ${money(e.amount)}. Pediu que você não falasse com ninguém.`);
+  }
+  if (ofType(ev, 'inquiryArchived').length) lines.push('Inquérito arquivado. Falta de provas.');
+  for (const e of ofType(ev, 'raid')) {
+    lines.push(`Busca e apreensão às seis da manhã. Levaram ${money(e.seized)} do caixa.`);
+    if (e.lost.length) {
+      const verb = e.lost.length === 1 ? 'não paga mais' : 'não pagam mais';
+      lines.push(`O caderninho foi junto: ${joinNames(e.lost)} ${verb}.`);
+    }
+  }
 
   for (const e of ofType(ev, 'loanMade')) {
     const guarantee = e.collateral ? ` Garantia: ${collateralText[e.collateral].noun}.` : '';

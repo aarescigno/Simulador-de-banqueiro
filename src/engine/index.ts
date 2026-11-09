@@ -4,3 +4,4 @@ export * from './save';
 export * from './state';
 export * from './debug';
 export * from './agiota';
+export * from './police';

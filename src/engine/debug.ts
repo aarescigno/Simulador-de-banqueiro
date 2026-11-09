@@ -14,6 +14,14 @@ export function hiddenVariables(state: GameState) {
     medo: r3(state.fear),
     bocaABoca: r3(state.word),
     denuncias: state.complaints,
+    atencao: r3(state.police.heat),
+    inquerito: state.police.inquiry
+      ? `faltam ${state.police.inquiry.weeksLeft} sem, advogado ${state.police.inquiry.lawyer ? 'sim' : 'não'}, ` +
+        `${state.police.inquiry.complaints} denúncias`
+      : 'nenhum',
+    propinas: state.police.bribes,
+    buscas: state.police.raids,
+    cooldownAte: state.police.cooldownUntil,
     politica: state.policy.collection,
     requests: state.requests.map(
       (r) => `${r.debtor.short}: risco ${r.risk}, topa até ${r.maxRate}%, paciência ${r.patience}`,

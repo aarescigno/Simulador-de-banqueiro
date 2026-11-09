@@ -101,6 +101,7 @@ export const ui = {
     forgivenStatus: (amount: string) => `Perdoado · ${amount}`,
     paid: (profit: string) => `Quitou · lucro ${profit}`,
     defaulted: (lost: string) => `Calote · baixado ${lost}`,
+    lost: (lost: string) => `Caderninho apreendido · baixado ${lost}`,
   },
 
   policies: {
@@ -121,6 +122,33 @@ export const ui = {
   meters: {
     fear: { name: 'Medo', text: 'Faz todo mundo pagar. Afasta quem tem opção.' },
     word: { name: 'Boca a boca', text: 'Traz pedidos. E gente perguntando.' },
+    heat: { name: 'Atenção', text: 'Denúncia vira atenção. Atenção vira inquérito.' },
+  },
+
+  heat: {
+    baixa: 'Baixa',
+    media: 'Média',
+    alta: 'Alta',
+    inquiry: (weeks: number, lawyer: boolean) =>
+      `Inquérito aberto · ${weeks === 1 ? 'falta 1 semana' : `faltam ${weeks} semanas`}${lawyer ? ' · com advogado' : ''}`,
+  },
+
+  dilemma: {
+    title: 'Inquérito',
+    body: 'A delegacia abriu inquérito por usura. O escrivão deu a entender que papel às vezes some.',
+    options: {
+      pagar: { label: 'Molhar a mão', text: 'O inquérito some. A atenção fica, e o preço sobe.' },
+      advogado: {
+        label: 'Contratar advogado',
+        text: (weeks: number) => `${weeks} semanas de inquérito, com defesa.`,
+      },
+      correr: {
+        label: 'Deixar correr',
+        text: (weeks: number) => `${weeks} semanas. Depende do que acharem.`,
+      },
+    },
+    noCash: 'Caixa não cobre.',
+    decideFirst: 'Decida antes de avançar.',
   },
 
   pocket: {

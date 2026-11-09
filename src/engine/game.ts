@@ -10,10 +10,12 @@ import {
   validTerms,
   type LoanTerms,
 } from './agiota';
+import { applyChoice, complain, heatBand, tickPolice } from './police';
 import { createRng, type Rng } from './rng';
 import {
   SAVE_VERSION,
   type CollectionPolicy,
+  type DilemmaOption,
   type GameEvent,
   type GameState,
   type Level,
@@ -24,7 +26,8 @@ export type Decision =
   | { type: 'refuse'; requestId: number }
   | { type: 'setPolicy'; collection: CollectionPolicy }
   | { type: 'setOverride'; loanId: number; override: Level | null }
-  | { type: 'forgive'; loanId: number };
+  | { type: 'forgive'; loanId: number }
+  | { type: 'choose'; dilemmaId: number; option: DilemmaOption };
 
 export interface StepResult {
   state: GameState;
@@ -42,11 +45,13 @@ export function newGame(seed: number): GameState {
     requests: [],
     loans: [],
     nextId: 1,
-    stats: { lent: 0, received: 0, writtenOff: 0, recovered: 0, forgiven: 0 },
+    stats: { lent: 0, received: 0, writtenOff: 0, recovered: 0, forgiven: 0, seized: 0 },
     policy: { collection: { ...collection.defaultPolicy } },
     fear: 0,
     word: collection.word.start,
     complaints: 0,
+    police: { heat: 0, inquiry: null, cooldownUntil: 0, bribes: 0, raids: 0 },
+    dilemmas: [],
     queue: [{ week: 1, event: { type: 'gameStarted' } }],
     journal: [],
     devUsed: false,
@@ -63,6 +68,11 @@ export function newGame(seed: number): GameState {
  * lançam erro.
  */
 export function decide(prev: GameState, d: Decision): GameState {
+  if (d.type === 'choose') {
+    const state = structuredClone(prev);
+    const event = applyChoice(state, d.dilemmaId, d.option);
+    return event ? schedule(state, state.week, event) : state;
+  }
   if (d.type === 'setPolicy' || d.type === 'setOverride' || d.type === 'forgive') {
     return decideCollection(prev, d);
   }
@@ -152,6 +162,10 @@ export function step(
   state = structuredClone(state);
   const events: GameEvent[] = [];
 
+  const bandBefore = heatBand(state.police.heat);
+  // Dilema sem resposta: vale a opção padrão (correr), que não tem custo nem evento.
+  state.dilemmas = [];
+
   const due = state.queue.filter((q) => q.week <= state.week);
   state.queue = state.queue.filter((q) => q.week > state.week);
   for (const q of due) events.push(q.event);
@@ -163,12 +177,11 @@ export function step(
   for (const loan of state.loans) collect(state, loan, rng, events, fear);
 
   const c = collection;
-  if (c.fear.ambient > 0 && rng.chance(c.fear.ambient * (state.fear / 100))) {
-    state.complaints += 1;
-    events.push({ type: 'complaint', source: 'ambiente' });
-  }
+  complain(state, rng, events, c.fear.ambient * (state.fear / 100), 'ambiente');
   state.fear = clampMeter(state.fear * c.fear.decay);
   state.word = clampMeter(state.word + (c.word.start - state.word) * c.word.drift);
+
+  tickPolice(state, rng, events, bandBefore);
 
   state.journal.push({
     week: state.week,
@@ -176,6 +189,7 @@ export function step(
     cash: state.cash,
     fear: state.fear,
     word: state.word,
+    heat: state.police.heat,
   });
   if (state.journal.length > params.journalWeeks) {
     state.journal.splice(0, state.journal.length - params.journalWeeks);

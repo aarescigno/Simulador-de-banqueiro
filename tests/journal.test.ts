@@ -14,6 +14,7 @@ describe('jornal', () => {
       week: 3,
       cash: 23_400,
       fear: 0,
+      heat: 0,
       word: 30,
       events: [
         { type: 'paid', name: 'Seu Jorge', amount: 350 },
@@ -34,6 +35,7 @@ describe('jornal: garantias e negociação', () => {
       week: 9,
       cash: 10_000,
       fear: 0,
+      heat: 0,
       word: 30,
       events: [
         {
@@ -60,5 +62,28 @@ describe('jornal: garantias e negociação', () => {
       'Seu Jorge não topou a taxa. Foi pedir a outro.',
       'Caixa: R$ 10 mil.',
     ]);
+  });
+});
+
+describe('jornal: atenção policial', () => {
+  it('conta ronda, inquérito, propina e busca', () => {
+    const lines = reportLines({
+      week: 12,
+      cash: 8_000,
+      fear: 0,
+      heat: 0,
+      word: 30,
+      events: [
+        { type: 'heatRose', band: 'alta' },
+        { type: 'inquiryOpened' },
+        { type: 'bribed', amount: 4_000 },
+        { type: 'raid', seized: 5_000, lost: ['Seu Jorge'] },
+      ],
+    });
+    const text = lines.join('\n');
+    expect(text).toContain('Viatura parada na esquina.');
+    expect(text).toContain('Inquérito aberto na delegacia');
+    expect(text).toContain('Custo: R$');
+    expect(text).toContain('O caderninho foi junto: Seu Jorge não paga mais.');
   });
 });

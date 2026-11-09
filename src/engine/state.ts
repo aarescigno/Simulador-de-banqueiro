@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export interface Debtor {
   /** Nome completo, para a ficha. */
@@ -75,8 +75,43 @@ export interface Loan {
   override: Level | null;
   /** Nível aplicado na última semana de atraso. */
   lastLevel: Level | null;
-  status: 'active' | 'paid' | 'defaulted' | 'forgiven';
+  status: 'active' | 'paid' | 'defaulted' | 'forgiven' | 'lost';
   endWeek?: number;
+}
+
+/** Faixa da atenção policial; o número exato fica oculto. */
+export type HeatBand = 'baixa' | 'media' | 'alta';
+
+export interface Inquiry {
+  startWeek: number;
+  /** Semanas até a resolução; ao chegar a 0, resolve. */
+  weeksLeft: number;
+  lawyer: boolean;
+  /** Denúncias recebidas com o inquérito aberto. */
+  complaints: number;
+}
+
+export interface Police {
+  /** Atenção, de 0 a 100 (oculta; o jogador vê a faixa). */
+  heat: number;
+  inquiry: Inquiry | null;
+  /** Primeira semana em que um novo inquérito pode abrir. */
+  cooldownUntil: number;
+  /** Propinas pagas (cada uma encarece a próxima). */
+  bribes: number;
+  /** Buscas e apreensões sofridas. */
+  raids: number;
+}
+
+export type DilemmaKind = 'inquerito';
+export type DilemmaOption = 'pagar' | 'advogado' | 'correr';
+
+/** Escolha pendente do jogador. `costs` é o preço de cada opção, congelado na abertura. */
+export interface Dilemma {
+  id: number;
+  kind: DilemmaKind;
+  week: number;
+  costs: Record<DilemmaOption, number>;
 }
 
 export type ComplaintSource = 'pressao' | 'primo' | 'moto' | 'celular' | 'inss' | 'ambiente';
@@ -100,6 +135,12 @@ export type GameEvent =
   | { type: 'missed'; name: string; streak: number; level?: Level | null }
   | { type: 'forgiven'; name: string; amount: number }
   | { type: 'complaint'; source: ComplaintSource; name?: string }
+  | { type: 'heatRose'; band: HeatBand }
+  | { type: 'inquiryOpened' }
+  | { type: 'bribed'; amount: number }
+  | { type: 'lawyerHired'; amount: number }
+  | { type: 'inquiryArchived' }
+  | { type: 'raid'; seized: number; lost: string[] }
   | { type: 'settled'; name: string; profit: number }
   | {
       type: 'defaulted';
@@ -122,6 +163,8 @@ export interface WeekReport {
   /** Medo e boca a boca ao fechar a semana. */
   fear: number;
   word: number;
+  /** Atenção policial ao fechar a semana. */
+  heat: number;
 }
 
 export interface Stats {
@@ -132,6 +175,8 @@ export interface Stats {
   recovered: number;
   /** Saldo de dívidas perdoadas. */
   forgiven: number;
+  /** Caixa levado em buscas e apreensões. */
+  seized: number;
 }
 
 export interface GameState {
@@ -154,6 +199,9 @@ export interface GameState {
   word: number;
   /** Denúncias acumuladas. */
   complaints: number;
+  police: Police;
+  /** Escolhas pendentes; sem resposta até fechar a semana, valem a opção padrão. */
+  dilemmas: Dilemma[];
   /** Fila de eventos agendados, em ordem de semana. */
   queue: ScheduledEvent[];
   /** Relatórios das semanas fechadas, do mais antigo ao mais novo. */

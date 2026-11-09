@@ -310,8 +310,8 @@ describe('bot', () => {
         expect(l.paidInstallments).toBeLessThanOrEqual(l.weeks);
         if (l.status === 'paid') expect(l.totalPaid).toBe(l.totalDue);
       }
-      const { lent, received, recovered } = s.stats;
-      expect(s.cash).toBe(params.startingCash - lent + received + recovered);
+      const { lent, received, recovered, seized } = s.stats;
+      expect(s.cash).toBe(params.startingCash - lent + received + recovered - seized);
       for (const l of s.loans) expect(l.recovered).toBeLessThanOrEqual(l.totalDue - l.totalPaid);
     }
   });

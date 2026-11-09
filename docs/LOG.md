@@ -6,6 +6,31 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-09 · Marco 1a · Atenção policial, inquérito e dilema · PR #6
+
+**Feito**
+- Motor: `src/engine/police.ts` (atenção, faixas, `complain` movido de `agiota.ts`, `tickPolice`, inquérito, busca e apreensão, `applyChoice`). Denúncia soma atenção pela origem; inquérito abre por faixa, dura 4 semanas e resolve em arquivo ou busca (caixa, empréstimos `lost`, medo e atenção cortados). Com inquérito aberto chega 1 pedido a menos.
+- Dilema genérico (`state.dilemmas`, decisão `choose`): molhar a mão, advogado ou deixar correr, com preço congelado na abertura; sem resposta vale `correr`.
+- Save versão 4 com migração 3→4 (`police`, `dilemmas`, `stats.seized`, `heat` nos relatórios); `Loan.status` ganha `lost`.
+- Telas: Resumo com três medidores (Atenção só em faixa, com setinha), faixa "Inquérito aberto", `DilemmaCard`, avançar travado com dilema pendente; Carteira mostra "Caderninho apreendido"; Jornal com os textos novos; painel dev mostra atenção, inquérito, propinas e buscas. Conferido em 360 px, sem estourar a largura.
+- Testes: `tests/policia.test.ts`, migração em `tests/save.test.ts`, textos em `tests/journal.test.ts`. Invariante de caixa do bot passou a descontar `stats.seized`. Sim com `INQ=correr|advogado|pagar` e colunas atenção, inquérito %, busca %.
+
+**Decisões**
+- Valores finais que diferem do plano, ajustados pela ordem do briefing: pesos de denúncia ambiente 8→12, pressão 10→15, celular 10→20, INSS 12→25, moto 18→30, primo 20→30; faixas média 25→20 e alta 55→50. Demais valores como no plano. Os pesos de celular, INSS e moto subiram mais que os de pressão para a garantia (alvo 4) render atenção.
+- Alvos do sim (20% a.m., 8 sem, 100 rodadas, semana 30): nada 31,8 mil · inquérito 0% · busca 0% · atenção 8; padrão 35,1 mil · 38% · 10% · 24; primo 28,3 mil · 86% · 57% · 51; padrão com `COLLATERAL=1` 41,5 mil · 48% · 15% · 32; primo com `INQ=advogado` 30,3 mil · 86% · 31% · 52 (busca 54% da do primo sem advogado). Os 6 alvos batem.
+- O sorteio de denúncia ambiente agora é uma chamada só a `complain` (muda a sequência do RNG em relação ao save anterior, sem efeito no balanço).
+
+**Pendências**
+- A busca do padrão fica perto do piso do alvo (10% contra 8%); olhe ao balancear com mais devedores.
+- A prisão e o fim da partida ficam para "Crise do degrau 1"; hoje o inquérito só custa caixa e carteira.
+
+**Próximo passo**
+- Bolso com 3 compartimentos e retiradas.
+
+Modelo: Opus (plano) + Sonnet, esforço médio (execução) — plano fechado com números e alvos do sim.
+
+---
+
 ## 2026-11-08 · Marco 1a · Cobrança em 3 níveis, medo e boca a boca · PR #5
 
 **Feito**

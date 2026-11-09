@@ -39,7 +39,7 @@ Objetivo: provar que o jogo é divertido antes de construir o resto.
 **1a. Agiota**
 - [x] Garantias (celular, moto, cartão do INSS retido) e negociação nos pedidos.
 - [x] Política de cobrança em 3 níveis com exceções por devedor; medo e boca a boca.
-- [ ] Atenção policial (faixa), denúncia, investigação.
+- [x] Atenção policial (faixa), denúncia, investigação.
 - [ ] Bolso com 3 compartimentos e retiradas.
 - [ ] 15–25 eventos (delegado, milícia, rival, devedor some, tragédia implícita).
 - [ ] Crise do degrau 1 (advogado, sumir, acordo) e finais (preso, morto).

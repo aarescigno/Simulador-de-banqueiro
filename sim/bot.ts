@@ -6,6 +6,7 @@ import {
   step,
   type CollateralKind,
   type CollectionPolicy,
+  type DilemmaOption,
   type GameState,
 } from '../src/engine';
 
@@ -20,6 +21,8 @@ export interface BotOptions {
   collateral?: boolean;
   /** Política de cobrança; padrão do jogo se omitida. */
   policy?: CollectionPolicy;
+  /** Resposta ao dilema do inquérito (INQ=...); sem caixa para a opção, corre. Padrão: correr. */
+  inquiry?: DilemmaOption;
 }
 
 /** Políticas de cobrança do sim (POLICY=...). */
@@ -35,6 +38,11 @@ const strongest: CollateralKind[] = ['inss', 'moto', 'celular'];
 /** Responde a todos os pedidos da semana. */
 export function botDecide(state: GameState, o: BotOptions): GameState {
   let s = state;
+  for (const d of state.dilemmas) {
+    const want = o.inquiry ?? 'correr';
+    const option = d.costs[want] <= s.cash ? want : 'correr';
+    s = decide(s, { type: 'choose', dilemmaId: d.id, option });
+  }
   for (const r of state.requests) {
     if (!canAccept(s, r.id) || r.amount > s.cash * (o.maxShare ?? 1)) {
       s = decide(s, { type: 'refuse', requestId: r.id });
