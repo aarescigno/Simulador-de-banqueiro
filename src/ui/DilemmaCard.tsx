@@ -21,7 +21,9 @@ export function DilemmaCard({ dilemma, state, update }: Props) {
       {Object.entries(text.options).map(([option, o]) => {
         const cost = dilemma.costs[option];
         if (cost === undefined) return null;
-        const label = o.label(ctx);
+        // O preço da opção, quando existe, vale como valor do texto (acordo, pagar o jurado).
+        const octx: TextCtx = cost > 0 ? { ...ctx, amount: cost } : ctx;
+        const label = o.label(octx);
         const afford = cost <= state.cash;
         return (
           <div key={option} class="stack tight">
@@ -34,7 +36,7 @@ export function DilemmaCard({ dilemma, state, update }: Props) {
             >
               {o.showCost && cost > 0 ? `${label} · ${money(cost)}` : label}
             </button>
-            <span class="small dim">{afford ? o.hint?.(ctx) : ui.dilemma.noCash}</span>
+            <span class="small dim">{afford ? o.hint?.(octx) : ui.dilemma.noCash}</span>
           </div>
         );
       })}

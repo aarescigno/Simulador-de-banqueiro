@@ -10,6 +10,7 @@ import {
   validTerms,
   type LoanTerms,
 } from './agiota';
+import { retire, tickCrisis } from './crisis';
 import { emptyIncidents } from './incidents';
 import { emptyPocket, stash, tickPocket, unstash } from './pocket';
 import { applyChoice, resolveDefaults, tickIncidents } from './incidents';
@@ -33,7 +34,8 @@ export type Decision =
   | { type: 'forgive'; loanId: number }
   | { type: 'choose'; dilemmaId: number; option: DilemmaOption }
   | { type: 'stash'; to: Compartment; amount: number }
-  | { type: 'unstash'; from: Compartment; amount: number };
+  | { type: 'unstash'; from: Compartment; amount: number }
+  | { type: 'retire' };
 
 export interface StepResult {
   state: GameState;
@@ -71,6 +73,9 @@ export function newGame(seed: number): GameState {
     pocket: emptyPocket(),
     incidents: emptyIncidents(),
     dilemmas: [],
+    crisis: null,
+    ended: null,
+    primoGone: false,
     queue: [{ week: 1, event: { type: 'gameStarted' } }],
     journal: [],
     devUsed: false,
@@ -87,6 +92,12 @@ export function newGame(seed: number): GameState {
  * lançam erro.
  */
 export function decide(prev: GameState, d: Decision): GameState {
+  if (prev.ended) throw new Error('A partida acabou.');
+  if (d.type === 'retire') {
+    const state = structuredClone(prev);
+    retire(state);
+    return state;
+  }
   if (d.type === 'choose') {
     const state = structuredClone(prev);
     const event = applyChoice(state, d.dilemmaId, d.option);
@@ -182,9 +193,11 @@ export function step(
   decisions: readonly Decision[] = [],
   rng: Rng = createRng(prev.rngState),
 ): StepResult {
+  if (prev.ended) throw new Error('A partida acabou.');
   let state = prev;
   for (const d of decisions) state = decide(state, d);
   state = structuredClone(state);
+  if (state.ended) return { state, events: [] };
   const events: GameEvent[] = [];
 
   const bandBefore = heatBand(state.police.heat);
@@ -209,6 +222,7 @@ export function step(
   tickPolice(state, rng, events, bandBefore);
   tickPocket(state, rng, events);
   tickIncidents(state, rng, events);
+  tickCrisis(state, rng, events);
 
   state.journal.push({
     week: state.week,
@@ -222,8 +236,10 @@ export function step(
     state.journal.splice(0, state.journal.length - params.journalWeeks);
   }
 
-  state.week += 1;
-  state.requests = generateRequests(state, rng);
+  if (!state.ended) {
+    state.week += 1;
+    state.requests = generateRequests(state, rng);
+  }
   state.rngState = rng.state();
   return { state, events };
 }
@@ -243,7 +259,7 @@ export function devGiveMoney(state: GameState, amount: number): GameState {
 /** Avança semanas sem responder pedidos (eles expiram). */
 export function advanceWeeks(state: GameState, weeks: number): GameState {
   let s = state;
-  for (let i = 0; i < weeks; i++) s = step(s).state;
+  for (let i = 0; i < weeks && !s.ended; i++) s = step(s).state;
   return s;
 }
 

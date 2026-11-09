@@ -6,6 +6,44 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-09 · Marco 1a · Crise do degrau 1 e finais · PR #8
+
+**Feito**
+- Motor: `src/engine/crisis.ts` novo (`tickCrisis`, `openJurado`, `applyCrisisChoice`, `endingFor`/`endGame`, `retire`, `devForceTrial`). `tickCrisis` roda depois do `tickIncidents`; a crise aberta numa semana só começa a contar na seguinte. `police.ts`: `evidenceOf`, `dealCost`, `openTrial`; o processo abre dentro da busca (segunda busca, ou evidência ≥ 60 na resolução) e, com crise aberta, não há inquérito novo, nem dilema de ocorrência sorteado, e chega 1 pedido a menos. O jurado é agendado `hit.delay` (4) semanas depois da segunda recusa à milícia; só abre se a milícia segue `refusedTwice` e espera uma semana se houver outra crise.
+- Dilemas `processo` (nada, advogado, acordo, entregar, sumir, fugir) e `jurado` (ficar, pagar, sumir, fugir) na tabela `dilemmaOptions`; custos congelados na abertura (acordo e pagar saem do caixa da hora; `entregar` some com `primoGone`). `sumir`: semana + 8, empréstimos ativos perdidos, medidores e efeitos zerados, pedidos novos (RNG derivado, sem tocar o `rngState`), tira `jurado` e `milicia_recado` da agenda; bolso intacto.
+- Finais `state.ended` (preso, morto, exilado, aposentado) com `parts` para a tela; com `ended`, `step` e `decide` lançam erro; `retire` só da semana 20 em diante. `primoGone` entra no `isPrimoOut` (primo vira pressão) e esconde `primo` no dilema do rival. Save 7, migração 6→7.
+- Conteúdo: `src/content/endings.ts` (cartões, linhas do Jornal, faixa, textos e parcelas dos finais), `ui.ts` (retire, primo entregue, painel dev).
+- Telas: faixa da crise no Resumo (no lugar da do inquérito), `primoGone` em Políticas e Carteira, "Pendurar o caderninho" no Bolso, `EndScreen.tsx` no lugar do jogo quando `ended` (o "Continuar" leva a ela), "Forçar processo" e jurado (pela lista de ocorrências) no painel dev. `DilemmaCard` passa o preço da opção ao texto. Conferido em 360 px (`scrollWidth` 360): cartão do processo com as 6 opções, faixa com advogado, Bolso antes e depois da semana 20, Políticas com o primo entregue, telas de exilado e aposentado, e o fluxo aposentar pelo Bolso.
+- Testes: `tests/crise.test.ts` (gatilhos, cada opção com efeito exato, julgamento com rng 0 e 0,99, jurado, placar de cada final, `retire`, `ended`, `levelFor`, textos, bot) e migração 6→7 em `tests/save.test.ts`. O bot para quando a partida acaba; o invariante de caixa soma o custo da crise via `stats.spent`.
+- Sim: `WEEKS`, `CRISE=nada|advogado|acordo|entregar|sumir` e colunas % crise, preso, morto, exilado.
+
+**Decisões**
+- Valores que diferem do plano: `lawyer.cost` 8.000 (era 12.000), `lawyer.prisonChance` 0,15 (era 0,25), `hit.deathChance` 0,12 (era 0,15). Com 12 mil o bot quase nunca pagava o advogado (14 de 55 crises; caixa já pela metade depois da busca), então `prisonChance` sozinha não movia o alvo 4 (preso 22-23% mesmo com 0,10); com 8 mil, 0,15 deu 13%. Com 0,15 de morte, o alvo 5 ficava em 40% (no limite).
+- Adicionei `lawyer: boolean` em `Crisis` (para a faixa "com advogado"). O acordo não zera o cooldown do inquérito (o plano não pede). O jurado não gera evento `incident`: a abertura é o evento `crisisOpened`.
+- Tabela do sim (20% a.m., 8 sem, 100 rodadas, `WEEKS=40`, `INQ=correr`, `INC=padrao`, salvo indicação):
+
+| execução | crise | preso | morto | alvo |
+|---|---|---|---|---|
+| nada | 0% | 0% | 0% | crise ≤ 5% |
+| padrão | 6% | 4% | 0% | crise 5–20%, preso 3–15% |
+| primo | 55% | 30% | 0% | crise ≥ 25%, preso ≥ 15% |
+| primo, `CRISE=advogado` | 55% | 13% | 0% | preso ≤ 50% de 30% (15%) |
+| padrão, `INC=recusa` | 78% | 3% | 35% | morto 10–40% |
+
+- Alvos 2 (crise 6%, preso 4%) e 4 (13% contra 15%) têm pouca folga. Ninguém sai exilado no sim (o bot não escolhe `fugir`).
+
+**Pendências**
+- Epílogo completo, "Quem pagou a conta" e herança ficam para o 1c; a tela final é curta.
+- Sem faixa no Resumo para o vereador e o choque (de antes).
+- O bot não tem `fugir` nem `retire`; o balanço desses finais não é medido.
+
+**Próximo passo**
+- Marco 1b: dilema da lavagem para abrir a ESC; planejar com o Opus antes.
+
+Modelo: Opus (plano) + Sonnet, esforço médio (execução) — plano fechado com números e alvos do sim.
+
+---
+
 ## 2026-11-09 · Marco 1a · 19 ocorrências · PR #7
 
 **Feito**

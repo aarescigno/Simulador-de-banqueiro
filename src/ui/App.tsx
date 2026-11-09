@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { newGame, type GameState } from '../engine';
 import { ContentWarning } from './ContentWarning';
+import { EndScreen } from './EndScreen';
 import { Game } from './Game';
 import { Menu } from './Menu';
 import { loadGame, markWarningSeen, randomSeed, saveGame, warningSeen } from './storage';
@@ -18,7 +19,15 @@ export function App() {
 
   return (
     <>
-      {screen === 'game' && state ? (
+      {screen === 'game' && state?.ended ? (
+        <EndScreen
+          state={state}
+          onNewGame={() => {
+            update(newGame(randomSeed()));
+            setScreen('game');
+          }}
+        />
+      ) : screen === 'game' && state ? (
         <Game state={state} update={update} onMenu={() => setScreen('menu')} />
       ) : (
         <Menu

@@ -25,10 +25,14 @@ export function Policies({ state, update }: TabProps) {
         <article key={level} class="card stack tight">
           <strong>{ui.levels[level].name}</strong>
           <span class="dim small">{ui.levels[level].text}</span>
+          {level === 'primo' && state.primoGone && (
+            <span class="amber small">{ui.levels.primoGone}</span>
+          )}
           <label class="row between">
             <span class="dim small">{ui.policies.from}</span>
             <select
               class="field select"
+              disabled={level === 'primo' && state.primoGone}
               value={current[level] ?? ''}
               onChange={(e) => set(level, e.currentTarget.value)}
             >

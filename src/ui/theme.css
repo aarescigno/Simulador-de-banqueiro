@@ -483,3 +483,31 @@ select.field {
   background: var(--panel);
   overflow-wrap: anywhere;
 }
+
+/* Tela final */
+.end {
+  padding: 24px 16px;
+  min-height: 100dvh;
+}
+.end h1 {
+  margin: 0;
+}
+.end p {
+  margin: 0;
+}
+.score {
+  font-size: 32px;
+  white-space: nowrap;
+}
+.parts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

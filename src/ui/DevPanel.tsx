@@ -3,6 +3,7 @@ import {
   advanceWeeks,
   allIncidents,
   devForceIncident,
+  devForceTrial,
   devGiveMoney,
   exportSave,
   hiddenVariables,
@@ -105,6 +106,19 @@ export function DevPanel({ state, update, onNewGame, onClose }: Props) {
                 {ui.dev.force}
               </button>
             </div>
+            <button
+              class="btn"
+              onClick={() => {
+                try {
+                  update(devForceTrial(state));
+                  setForceError('');
+                } catch (e) {
+                  setForceError(e instanceof Error ? e.message : String(e));
+                }
+              }}
+            >
+              {ui.dev.forceTrial}
+            </button>
             {forceError && <p class="small red">{forceError}</p>}
 
             <h3>{ui.dev.hidden}</h3>

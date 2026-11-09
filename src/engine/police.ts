@@ -1,5 +1,10 @@
 // Atenção policial, inquérito, busca e apreensão, e o dilema do inquérito.
-import { incidents, pocket as pocketParams, police } from '../content/params';
+import {
+  crisis as crisisParams,
+  incidents,
+  pocket as pocketParams,
+  police,
+} from '../content/params';
 import type { Rng } from './rng';
 import type {
   Dilemma,
@@ -55,11 +60,49 @@ export function complain(
   events.push({ type: 'complaint', source, name });
 }
 
+/** Evidência do inquérito: atenção e denúncias, pela metade com advogado. */
+export function evidenceOf(heat: number, complaints: number, lawyer: boolean): number {
+  const i = police.inquiry;
+  return (heat + i.perComplaint * complaints) * (lawyer ? i.lawyerFactor : 1);
+}
+
 /** Chance de o inquérito virar busca e apreensão. */
 export function raidChance(heat: number, complaints: number, lawyer: boolean): number {
   const i = police.inquiry;
-  const evidence = (heat + i.perComplaint * complaints) * (lawyer ? i.lawyerFactor : 1);
-  return clamp((evidence - i.raidOffset) / i.raidScale, i.raidMin, i.raidMax);
+  return clamp(
+    (evidenceOf(heat, complaints, lawyer) - i.raidOffset) / i.raidScale,
+    i.raidMin,
+    i.raidMax,
+  );
+}
+
+/** Preço de acertar o processo com o delegado, com o caixa e as propinas de agora. */
+export function dealCost(state: GameState): number {
+  const d = crisisParams.deal;
+  const base =
+    Math.max(d.min, d.cashShare * state.cash) * police.bribe.growth ** state.police.bribes;
+  return round100(base * (state.incidents.mesada > 0 ? d.mesadaDiscount : 1));
+}
+
+/** Abre o processo: crise e dilema, para a semana seguinte. Muta o estado (cópia). */
+export function openTrial(state: GameState, events: GameEvent[], dueWeek: number): void {
+  state.crisis = {
+    kind: 'processo',
+    startWeek: state.week,
+    weeksLeft: crisisParams.trialWeeks,
+    prisonChance: crisisParams.prisonChance,
+    lawyer: false,
+  };
+  const costs: Record<string, number> = {
+    nada: 0,
+    advogado: crisisParams.lawyer.cost,
+    acordo: dealCost(state),
+  };
+  if (!state.primoGone) costs.entregar = 0;
+  costs.sumir = 0;
+  costs.fugir = 0;
+  state.dilemmas.push({ id: state.nextId++, kind: 'processo', week: dueWeek, costs });
+  events.push({ type: 'crisisOpened', kind: 'processo' });
 }
 
 /** Preço de molhar a mão, com o caixa e as propinas de agora. */
@@ -68,7 +111,7 @@ export function bribeCost(cash: number, bribes: number): number {
   return round100(Math.max(b.min, b.cashShare * cash) * b.growth ** bribes);
 }
 
-function raid(state: GameState, rng: Rng, events: GameEvent[]): void {
+function raid(state: GameState, rng: Rng, events: GameEvent[], evidence: number): void {
   const r = police.raid;
   const seized = Math.round(state.cash * r.cashShare);
   state.cash -= seized;
@@ -92,6 +135,9 @@ function raid(state: GameState, rng: Rng, events: GameEvent[]): void {
   state.police.heat *= r.heatAfter;
   state.police.raids += 1;
   events.push({ type: 'raid', seized, lost });
+  const trial =
+    state.police.raids >= crisisParams.raidsForTrial || evidence >= crisisParams.evidenceForTrial;
+  if (trial && !state.crisis) openTrial(state, events, state.week + 1);
 }
 
 function openInquiry(state: GameState, events: GameEvent[]): void {
@@ -137,7 +183,7 @@ export function tickPolice(
     if (p.inquiry.weeksLeft > 0) return;
     const { heat, inquiry } = p;
     if (rng.chance(raidChance(heat, inquiry.complaints, inquiry.lawyer))) {
-      raid(state, rng, events);
+      raid(state, rng, events, evidenceOf(heat, inquiry.complaints, inquiry.lawyer));
     } else {
       p.heat *= police.archived.heatAfter;
       events.push({ type: 'inquiryArchived' });
@@ -147,7 +193,7 @@ export function tickPolice(
     return;
   }
 
-  if (state.week < p.cooldownUntil) return;
+  if (state.week < p.cooldownUntil || state.crisis) return;
   const factor =
     (state.incidents.mesada > 0 ? incidents.inquiryFactor.mesada : 1) *
     (state.week < state.incidents.vereadorUntil ? incidents.inquiryFactor.vereador : 1);
