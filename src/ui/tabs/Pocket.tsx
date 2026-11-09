@@ -145,13 +145,17 @@ function Card(props: {
           <button class="btn" disabled={!!props.stashReason} onClick={props.onStash}>
             {ui.pocket.stash}
           </button>
-          {props.stashReason && <span class="small dim">{props.stashReason}</span>}
+          {props.stashReason && props.stashReason !== ui.pocket.noAmount && (
+            <span class="small dim">{props.stashReason}</span>
+          )}
         </div>
         <div class="stack tight">
           <button class="btn" disabled={!!props.takeReason} onClick={props.onTake}>
             {ui.pocket.take}
           </button>
-          {props.takeReason && <span class="small dim">{props.takeReason}</span>}
+          {props.takeReason && props.takeReason !== ui.pocket.noAmount && (
+            <span class="small dim">{props.takeReason}</span>
+          )}
         </div>
       </div>
     </article>
