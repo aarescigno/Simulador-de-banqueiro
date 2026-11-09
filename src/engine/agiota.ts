@@ -1,12 +1,12 @@
 // Degrau 1: pedidos, empréstimos e parcelas semanais.
-import { collection, params, WEEKS_PER_MONTH } from '../content/params';
+import { collection, params, police, WEEKS_PER_MONTH } from '../content/params';
 import { firstNames, professions, reasons, surnames, titleChance, titles } from '../content/people';
+import { complain } from './police';
 import type { Rng } from './rng';
 import type {
   Collateral,
   CollateralKind,
   CollectionPolicy,
-  ComplaintSource,
   Debtor,
   GameEvent,
   GameState,
@@ -145,20 +145,6 @@ export function payChance(
   );
 }
 
-function complain(
-  state: GameState,
-  rng: Rng,
-  events: GameEvent[],
-  chance: number,
-  source: ComplaintSource,
-  name?: string,
-) {
-  if (chance > 0 && rng.chance(chance)) {
-    state.complaints += 1;
-    events.push({ type: 'complaint', source, name });
-  }
-}
-
 /**
  * Resolve a semana de um empréstimo ativo. Muta o empréstimo e o estado recebidos (cópias).
  * `fear` é o medo no começo da semana; o `step` o fixa para que a ordem dos devedores não importe.
@@ -295,10 +281,9 @@ export function generateRequests(state: GameState, rng: Rng): LoanRequest[] {
     ...state.requests.map((r) => r.debtor.short),
     ...state.loans.filter((l) => l.status === 'active').map((l) => l.debtor.short),
   ]);
-  const count = Math.min(
-    maxTotal,
-    rng.int(perWeek[0], perWeek[1]) + Math.floor(state.word / wordDivisor + rng.next()),
-  );
+  const base = rng.int(perWeek[0], perWeek[1]) + Math.floor(state.word / wordDivisor + rng.next());
+  const penalty = state.police.inquiry ? police.inquiry.requestPenalty : 0;
+  const count = Math.max(0, Math.min(maxTotal, base) - penalty);
   const fearRisk = collection.fear.riskBonus * (state.fear / 100);
   const out: LoanRequest[] = [];
   for (let i = 0; i < count; i++) {

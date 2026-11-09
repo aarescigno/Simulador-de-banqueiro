@@ -32,6 +32,20 @@ const migrations: Record<number, Migration> = {
     stats: { ...(old.stats as Obj), forgiven: 0 },
     journal: (old.journal as Obj[]).map((r) => ({ ...r, fear: 0, word: 30 })),
   }),
+  // 3 → 4: atenção policial, inquérito e dilemas.
+  3: (old) => ({
+    ...old,
+    police: { heat: 0, inquiry: null, cooldownUntil: 0, bribes: 0, raids: 0 },
+    dilemmas: [],
+    stats: { ...(old.stats as Obj), seized: 0 },
+    journal: (old.journal as Obj[]).map((r) => ({ ...r, heat: 0 })),
+  }),
+  // 4 → 5: bolso com três compartimentos.
+  4: (old) => ({
+    ...old,
+    pocket: { own: 0, laranja: 0, offshore: 0, blocked: 0, blockedUntil: 0, doleiro: false },
+    stats: { ...(old.stats as Obj), fees: 0, betrayed: 0 },
+  }),
 };
 
 export class SaveError extends Error {}

@@ -128,3 +128,71 @@ export const collection = {
 };
 
 export const WEEKS_PER_MONTH = 52 / 12;
+
+/**
+ * Atenção policial. Denúncia vira atenção, atenção vira inquérito, inquérito vira busca.
+ * O jogador só vê a faixa; os números ficam ocultos.
+ */
+export const police = {
+  /** Atenção × decay a cada semana. */
+  decay: 0.92,
+  /** Atenção somada por denúncia, pela origem. */
+  complaint: { ambiente: 12, pressao: 15, celular: 20, inss: 25, moto: 30, primo: 30 },
+  /** Boca a boca acima disso vira atenção: (boca − wordFloor) × wordWeight por semana. */
+  wordFloor: 50,
+  wordWeight: 0.04,
+  /** Faixa média a partir de medium, alta a partir de high. */
+  bands: { medium: 20, high: 50 },
+  /** Chance semanal de abrir inquérito, por faixa. */
+  inquiryChance: { baixa: 0, media: 0.04, alta: 0.12 },
+  /** Semanas sem novo inquérito depois de um encerrar. */
+  cooldown: 6,
+  inquiry: {
+    /** Duração do inquérito, em semanas. */
+    weeks: 4,
+    /** Evidência = atenção + perComplaint × denúncias do inquérito; com advogado, × lawyerFactor. */
+    perComplaint: 10,
+    lawyerFactor: 0.5,
+    /** Chance de busca = (evidência − raidOffset) / raidScale, entre raidMin e raidMax. */
+    raidOffset: 10,
+    raidScale: 80,
+    raidMin: 0.05,
+    raidMax: 0.9,
+    /** Pedidos a menos por semana com inquérito aberto. */
+    requestPenalty: 1,
+  },
+  /** Propina: max(min, cashShare × caixa) × growth^propinas já pagas, arredondada a 100. */
+  bribe: { min: 1_500, cashShare: 0.2, growth: 1.5 },
+  lawyer: 3_000,
+  /** Busca: fração do caixa levada, chance de perder cada empréstimo, e o que sobra de atenção e medo. */
+  raid: { cashShare: 0.5, loanLoss: 0.35, heatAfter: 0.5, fearAfter: 0.5 },
+  archived: { heatAfter: 0.7 },
+};
+
+/**
+ * Bolso: o que o jogador tira do caixa e guarda. O caixa é o negócio (a busca leva parte dele);
+ * o bolso é o placar. Em seu nome não custa nada, mas a busca bloqueia. O laranja cobra
+ * comissão e pode sumir com tudo. O doleiro cobra nos dois sentidos e pode ser preso.
+ */
+export const pocket = {
+  laranja: {
+    /** Comissão sobre cada depósito. */
+    fee: 0.05,
+    /** Chance semanal de sumir com tudo = min(betrayMax, betrayScale × (saldo / betrayRef)²). */
+    betrayScale: 0.02,
+    betrayRef: 50_000,
+    betrayMax: 0.05,
+  },
+  offshore: {
+    /** Taxa do doleiro na ida e na volta. */
+    fee: 0.1,
+    /** Remessa mínima (a volta não tem mínimo). */
+    min: 5_000,
+    /** Chance semanal de o doleiro ser preso, depois da primeira remessa. */
+    caughtChance: 0.004,
+    /** Atenção policial somada quando o doleiro cai. */
+    caughtHeat: 25,
+  },
+  /** Semanas que o bloqueio judicial dura (nova busca reinicia). */
+  block: { weeks: 14 },
+};

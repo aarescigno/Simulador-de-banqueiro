@@ -43,7 +43,7 @@ describe('migração', () => {
     }
     delete v1.stats.recovered;
     const migrated = deserialize(JSON.stringify(v1));
-    expect(migrated.saveVersion).toBe(3);
+    expect(migrated.saveVersion).toBe(5);
     expect(migrated.stats.recovered).toBe(0);
     for (const r of migrated.requests) {
       expect(r.assets[0]!.kind).toBe('celular');
@@ -70,13 +70,58 @@ describe('migração 2 → 3', () => {
     }
     delete v2.stats.forgiven;
     const m = deserialize(JSON.stringify(v2));
-    expect(m.saveVersion).toBe(3);
+    expect(m.saveVersion).toBe(5);
     expect(m.fear).toBe(0);
     expect(m.word).toBe(30);
     expect(m.complaints).toBe(0);
     expect(m.policy.collection).toEqual({ conversa: 1, pressao: 2, primo: 4 });
     expect(m.stats.forgiven).toBe(0);
     for (const l of m.loans) expect(l.override).toBeNull();
+    expect(() => advanceWeeks(m, 3)).not.toThrow();
+  });
+});
+
+describe('migração 3 → 4', () => {
+  it('ganha polícia zerada, dilemas e relatórios com atenção', () => {
+    const s = advanceWeeks(newGame(7), 3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- save antigo, sem tipo
+    const v3 = JSON.parse(serialize(s)) as Record<string, any>;
+    v3.saveVersion = 3;
+    delete v3.police;
+    delete v3.dilemmas;
+    delete v3.stats.seized;
+    for (const r of v3.journal) delete r.heat;
+    const m = deserialize(JSON.stringify(v3));
+    expect(m.saveVersion).toBe(5);
+    expect(m.police).toEqual({ heat: 0, inquiry: null, cooldownUntil: 0, bribes: 0, raids: 0 });
+    expect(m.dilemmas).toEqual([]);
+    expect(m.stats.seized).toBe(0);
+    for (const r of m.journal) expect(r.heat).toBe(0);
+    expect(() => advanceWeeks(m, 3)).not.toThrow();
+  });
+});
+
+describe('migração 4 → 5', () => {
+  it('ganha bolso zerado e taxas', () => {
+    const s = advanceWeeks(newGame(7), 3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- save antigo, sem tipo
+    const v4 = JSON.parse(serialize(s)) as Record<string, any>;
+    v4.saveVersion = 4;
+    delete v4.pocket;
+    delete v4.stats.fees;
+    delete v4.stats.betrayed;
+    const m = deserialize(JSON.stringify(v4));
+    expect(m.saveVersion).toBe(5);
+    expect(m.pocket).toEqual({
+      own: 0,
+      laranja: 0,
+      offshore: 0,
+      blocked: 0,
+      blockedUntil: 0,
+      doleiro: false,
+    });
+    expect(m.stats.fees).toBe(0);
+    expect(m.stats.betrayed).toBe(0);
     expect(() => advanceWeeks(m, 3)).not.toThrow();
   });
 });

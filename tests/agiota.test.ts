@@ -301,6 +301,7 @@ describe('bot', () => {
         monthlyRate: 25,
         weeks: 8,
         collateral: seed % 2 === 0,
+        pocket: (['own', 'laranja', 'offshore', null] as const)[seed % 4],
       });
       expect(s.week).toBe(51);
       expect(Number.isInteger(s.cash)).toBe(true);
@@ -310,8 +311,12 @@ describe('bot', () => {
         expect(l.paidInstallments).toBeLessThanOrEqual(l.weeks);
         if (l.status === 'paid') expect(l.totalPaid).toBe(l.totalDue);
       }
-      const { lent, received, recovered } = s.stats;
-      expect(s.cash).toBe(params.startingCash - lent + received + recovered);
+      const { lent, received, recovered, seized, fees, betrayed } = s.stats;
+      const p = s.pocket;
+      // O que saiu do caixa para o bolso: o que está lá, o que o laranja levou e as taxas.
+      expect(s.cash + p.own + p.laranja + p.offshore + p.blocked + betrayed + fees).toBe(
+        params.startingCash - lent + received + recovered - seized,
+      );
       for (const l of s.loans) expect(l.recovered).toBeLessThanOrEqual(l.totalDue - l.totalPaid);
     }
   });

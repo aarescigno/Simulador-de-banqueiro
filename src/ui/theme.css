@@ -435,10 +435,19 @@ select.field {
 }
 .meters {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.inquiry-bar {
+  padding: 8px 12px;
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+}
+.dilemma {
+  border-color: var(--amber);
 }
 .meter {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -446,4 +455,17 @@ select.field {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+/* Bolso */
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.pair .btn {
+  width: 100%;
+}
+.phrase {
+  margin: 0;
 }

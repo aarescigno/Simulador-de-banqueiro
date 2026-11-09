@@ -1,5 +1,5 @@
 // Texto do Jornal a partir dos eventos do motor. Voz de relatório, frases curtas.
-import type { ComplaintSource, GameEvent, Level, WeekReport } from '../engine/state';
+import type { ComplaintSource, GameEvent, HeatBand, Level, WeekReport } from '../engine/state';
 import { collateralText } from './collateral';
 import { money, percent } from './format';
 import { params } from './params';
@@ -37,6 +37,12 @@ const complaintText: Record<ComplaintSource, (name?: string) => string> = {
   celular: () => 'Celular tomado virou queixa na delegacia.',
   inss: (n) => `A família de ${n} foi ao INSS perguntar pelo cartão do benefício.`,
   ambiente: () => 'Alguém comentou com a ronda que no bairro todo mundo paga em dia.',
+};
+
+const heatRoseText: Record<HeatBand, string> = {
+  baixa: 'A ronda deixou de passar na sua rua.',
+  media: 'A ronda passou duas vezes na sua rua esta semana.',
+  alta: 'Viatura parada na esquina. Ninguém desceu.',
 };
 
 const levels: (Level | null)[] = [null, 'conversa', 'pressao', 'primo'];
@@ -86,7 +92,58 @@ export function reportLines(r: WeekReport): string[] {
     lines.push(`Dívida de ${e.name} perdoada: ${money(e.amount)}. O bairro comentou.`);
   }
 
+  for (const e of ofType(ev, 'stashed')) {
+    const got = money(e.amount - e.fee);
+    if (e.to === 'own') lines.push(`${money(e.amount)} guardados em seu nome.`);
+    else if (e.to === 'laranja') {
+      lines.push(`${money(e.amount)} no nome de ${e.who}. Ficaram ${got} de comissão.`);
+    } else lines.push(`${money(e.amount)} com o doleiro. Chegaram ${got} lá fora.`);
+  }
+  for (const e of ofType(ev, 'unstashed')) {
+    if (e.from === 'own') lines.push(`${money(e.amount)} do bolso de volta ao caixa.`);
+    else if (e.from === 'laranja') lines.push(`${e.who} devolveu ${money(e.amount)}.`);
+    else {
+      lines.push(`${money(e.amount)} trazidos de fora. O doleiro ficou com ${money(e.fee)}.`);
+    }
+  }
+
   for (const e of ofType(ev, 'complaint')) lines.push(complaintText[e.source](e.name));
+
+  for (const e of ofType(ev, 'betrayed')) {
+    lines.push(`${e.who} comprou uma caminhonete e trocou de número. Levou ${money(e.amount)}.`);
+  }
+  if (ofType(ev, 'doleiroCaught').length) {
+    lines.push(
+      'A Polícia Federal prendeu um doleiro na capital. A planilha dele tem apelidos. Um parece o seu.',
+    );
+  }
+  for (const e of ofType(ev, 'ownBlocked')) {
+    lines.push(
+      `Bloqueio judicial: ${money(e.amount)} em seu nome congelados até a semana ${e.until}.`,
+    );
+  }
+  for (const e of ofType(ev, 'unblocked')) {
+    lines.push(`A Justiça liberou o bloqueio: ${money(e.amount)} de volta em seu nome.`);
+  }
+
+  for (const e of ofType(ev, 'heatRose')) lines.push(heatRoseText[e.band]);
+  if (ofType(ev, 'inquiryOpened').length) {
+    lines.push('Inquérito aberto na delegacia, por usura. Seu nome está nele.');
+  }
+  for (const e of ofType(ev, 'bribed')) {
+    lines.push(`Um papel sumiu na delegacia. Custo: ${money(e.amount)}.`);
+  }
+  for (const e of ofType(ev, 'lawyerHired')) {
+    lines.push(`Advogado contratado: ${money(e.amount)}. Pediu que você não falasse com ninguém.`);
+  }
+  if (ofType(ev, 'inquiryArchived').length) lines.push('Inquérito arquivado. Falta de provas.');
+  for (const e of ofType(ev, 'raid')) {
+    lines.push(`Busca e apreensão às seis da manhã. Levaram ${money(e.seized)} do caixa.`);
+    if (e.lost.length) {
+      const verb = e.lost.length === 1 ? 'não paga mais' : 'não pagam mais';
+      lines.push(`O caderninho foi junto: ${joinNames(e.lost)} ${verb}.`);
+    }
+  }
 
   for (const e of ofType(ev, 'loanMade')) {
     const guarantee = e.collateral ? ` Garantia: ${collateralText[e.collateral].noun}.` : '';
