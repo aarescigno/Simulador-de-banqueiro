@@ -111,7 +111,8 @@ const targets: Partial<Record<DrawableId, (s: GameState) => Loan[]>> = {
       s,
       (l) =>
         l.missedStreak >= P.tragedia.minLate &&
-        (l.lastLevel === 'pressao' || l.lastLevel === 'primo'),
+        l.lastLevel !== null &&
+        P.tragedia.levels.includes(l.lastLevel),
     ),
   cartao: (s) => loansWhere(s, (l) => l.collateral?.kind === 'inss'),
 };

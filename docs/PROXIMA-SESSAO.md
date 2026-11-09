@@ -8,87 +8,63 @@ Para começar, basta abrir uma sessão neste repositório e dizer: **"Leia `docs
 
 ## Próxima etapa
 
-**Marco 1a — 19 ocorrências: delegado, milícia, rival, devedor some, tragédia implícita e outras.** Contexto no GDD, seção 16 ("Eventos") e seção 12 (tom). Plano fechado pelo Opus; números em `src/content/params.ts`, bloco novo `incidents`; textos em `src/content/incidents.ts` novo. Reusa o dilema do inquérito. Nenhuma ocorrência termina a partida (isso é do item seguinte).
+**Marco 1a — crise do degrau 1 (advogado, sumir, acordo, entregar) e finais (preso, morto, exilado, aposentado).** Contexto no GDD, seções 9 (Crise e saídas) e 10 (Finais). Plano fechado pelo Opus; números em `src/content/params.ts`, bloco novo `crisis`; textos em `src/content/endings.ts` novo. É o primeiro item que termina a partida. Epílogo completo, "Quem pagou a conta" e herança ficam para o 1c; aqui a tela final é curta.
 
-**Mecânica.** No fim de cada semana, depois de `tickPolice` e `tickPocket`, `tickIncidents(state, rng, events)`:
-1. Paga os efeitos contínuos: mesada do delegado e parte da milícia (abaixo).
-2. Dispara as ocorrências agendadas para esta semana (`state.incidents.scheduled`, lista de `{ week, id, loanId? }`).
-3. Com chance 0,35, sorteia **uma** ocorrência entre as elegíveis, com o peso de cada uma. Elegível = gatilho verdadeiro, `semana ≥ minWeek`, fora do intervalo de repetição (`cooldown`, contado de `state.incidents.last[id]`), e, se for dilema, sem outro dilema de ocorrência pendente. Ocorrência que mira um devedor sorteia um entre os empréstimos ativos que cumprem o gatilho.
-- **Notícia:** aplica o efeito na hora e sai no Jornal (evento `incident { id, name?, amount? }`).
-- **Dilema:** entra em `state.dilemmas` para a semana seguinte, com `kind = id`, `loanId?` e `costs` congelados; o evento `incident` anuncia no Jornal. Sem resposta, vale a opção padrão (a primeira da lista abaixo marcada com *). Escolha → evento `incidentChoice { id, option, name?, amount? }`. Todas as escolhas são determinísticas (sem sorteio no `decide`); o que tiver sorte fica para um agendamento resolvido no `step`.
-- `DilemmaKind` passa a ser `'inquerito' | IncidentId`; `DilemmaOption` vira string validada por uma tabela de opções por tipo em `src/engine/incidents.ts` (o inquérito entra na mesma tabela). `Dilemma` ganha `loanId?`. Hoje o `step` só faz `state.dilemmas = []` (a padrão do inquérito não tem efeito); troque por aplicar a opção padrão de cada dilema pendente. `applyChoice` (em `police.ts`) passa a despachar por `kind`.
+**Crises** (`state.crisis = { kind, startWeek, weeksLeft, prisonChance } | null`; uma por vez; com crise aberta não abre inquérito nem dilema de ocorrência novo, e chega 1 pedido a menos por semana):
+- **Processo** (`kind: 'processo'`): abre quando uma busca e apreensão acontece e (a) `police.raids` passa a ser 2 ou mais, ou (b) a evidência daquela resolução era ≥ 60. A busca aplica os efeitos de sempre; a crise vem junto. `weeksLeft` 6 (julgamento), `prisonChance` 0,7. Dilema `processo` (a primeira opção é a padrão):
+  - `nada`: espera o julgamento.
+  - `advogado` (12.000): `prisonChance` 0,25.
+  - `acordo` (preço `arredonda100(max(8.000, 0,4 × caixa) × 1,5^bribes)`, metade se paga mesada ao delegado): crise acaba na hora, `bribes + 1`, atenção = 40.
+  - `entregar` (sem custo): "Entregar o primo". Crise acaba; `state.primoGone = true` (o primo vira pressão para sempre, nas regras e nas exceções); medo × 0,3; atenção = 30.
+  - `sumir` (sem custo): "Sumir por uns tempos". Semana + 8 (sem cobrança, sem sorteios); todo empréstimo ativo perdido; pedidos novos; medo 0, boca 30, atenção 0; inquérito, rival, mesada e milícia zerados (bairro novo). Bolso intacto; o bloqueio segue o prazo. Crise acaba.
+  - `fugir` (sem custo): "Fugir de vez". Fim **exilado**.
+  No julgamento (`weeksLeft` chega a 0): sorteio com `prisonChance` → fim **preso**; senão absolvido: crise acaba, o bloqueado volta para `own`, atenção × 0,5.
+- **Jurado** (`kind: 'jurado'`): agendada 4 semanas depois de a milícia ficar `refusedTwice` (recusa ao recado). `weeksLeft` 4. Dilema `jurado`:
+  - `ficar`: toda semana, chance 0,15 de fim **morto**; sobrevivendo às 4, a crise acaba e a milícia passa a `paying` com 20%.
+  - `pagar` (preço `arredonda100(0,6 × caixa)`): crise acaba, milícia `paying` com 20%.
+  - `sumir` e `fugir`: como no processo.
 
-**Efeitos contínuos** (`state.incidents`): `last`, `scheduled`, `mesada` (R$/semana, 0 = não paga), `militia` (`'none' | 'paying' | 'refused' | 'refusedTwice'`) e `militiaRate`, `rivalUntil`, `primoOutUntil`, `vereadorUntil`, `shock { until, payDelta }`.
-- Mesada: toda semana sai do caixa; se o caixa não cobre, a mesada para, atenção +15 e o Jornal avisa. Enquanto paga, chance de inquérito × 0,4.
-- Milícia pagando: toda semana leva `militiaRate` do que entrou de parcelas na semana.
-- Rival ativo (`semana < rivalUntil`): 1 pedido a menos por semana e taxa máxima dos pedidos novos −8.
-- Primo fora (`semana < primoOutUntil`): onde a regra ou a exceção pede o primo, vale a pressão.
-- Vereador (`semana < vereadorUntil`): chance de inquérito × 0,6 (acumula com a mesada).
-- Choque (`semana < shock.until`): `payDelta` soma na chance de pagar de quem não quebrou.
+**Finais** (`state.ended = { kind, week, score, parts } | null`; com `ended`, `step` e `decide` lançam erro). Placar e o que entra nele (`parts` guarda cada parcela para a tela):
+- **Preso**: laranja + lá fora. Caixa, em seu nome e bloqueado ficam com a Justiça.
+- **Morto**: em seu nome + bloqueado + lá fora (a família herda); o laranja fica com o dele.
+- **Exilado**: lá fora + metade do caixa (na mala). O resto fica para trás.
+- **Aposentado**: decisão nova `retire`, a partir da semana 20 (antes, erro): caixa + em seu nome + laranja + lá fora. A carteira fica na rua; o bloqueado não entra.
 
-**As 19 ocorrências** (peso; gatilho; `minWeek`; `cooldown`; efeito). Valores em reais.
+**Ordem no `step`:** depois de `tickIncidents`, `tickCrisis` (avança, julga ou mata). Toda aleatoriedade pelo `rng` do `step`. Dilema de crise sem resposta recebe a opção padrão, como os outros.
 
-| id | tipo | peso | gatilho | min | cooldown | efeito / opções (* = padrão) |
-| --- | --- | --- | --- | --- | --- | --- |
-| `delegado` | dilema | 3 | atenção média ou alta, sem mesada | 6 | 12 | *`recusar`: atenção +10. `mesada`: 600 por semana, atenção −10 já |
-| `milicia` | dilema | 3 | `stats.received` ≥ 10.000, milícia `none` | 8 | — (uma vez) | *`pagar`: milícia `paying`, taxa 10%, medo +5 (quem não responde, paga). `recusar`: milícia `refused`, agenda `milicia_recado` em 3 semanas |
-| `milicia_recado` | dilema | — | só agendada | — | — | *`pagar`: `paying`, taxa 15%. `recusar`: `refusedTwice`, caixa −40%, medo × 0,5, primo fora 6 semanas (o item da crise vai continuar essa história) |
-| `rival` | dilema | 3 | sem rival ativo | 6 | 15 | *`ignorar`: rival por 8 semanas. `primo`: sem rival, atenção +15, medo +5 (indisponível com primo fora) |
-| `rolar` | dilema, devedor | 4 | empréstimo com 2+ semanas de atraso | 3 | 4 | *`recusar`: nada. `rolar`: as parcelas em atraso (até 2) contam como pagas com dinheiro seu (`paidInstallments`, `totalPaid`, `stats.lent` e `stats.received` sobem igual; caixa não muda), `weeks + 3`, `totalDue + 3 × parcela`, `missedStreak = 0` |
-| `bem` | dilema, devedor | 3 | empréstimo com 3+ semanas de atraso | 3 | 6 | *`recusar`: nada. `aceitar`: fecha como calote recuperando `round(0,25 × saldo)` (geladeira usada), medo +1, boca −2 |
-| `pastor` | dilema | 2 | — | 4 | 12 | *`recusar`: boca −2. `dar` (1.000): boca +6, atenção −5 |
-| `vereador` | dilema | 2 | — | 10 | — (uma vez) | *`recusar`: nada. `emprestar` (5.000): vereador por 20 semanas; agenda `vereador_paga` em 20 semanas |
-| `vereador_paga` | notícia | — | só agendada | — | — | 40%: devolve 5.000; senão, só o texto |
-| `radio` | dilema | 2 | atenção média ou alta e 2+ denúncias | 6 | 10 | *`ignorar`: atenção +8, boca −5. `pagar` (1.500): atenção −8 |
-| `fianca` | dilema | 3 | algum empréstimo com `lastLevel` primo nesta semana | 5 | 12 | *`deixar`: primo fora 6 semanas, atenção +15. `pagar` (2.000): nada |
-| `pm` | dilema | 2 | — | 8 | 20 | *`recusar`: atenção +5. `emprestar` (3.000): atenção −12; agenda `pm_paga` em 10 semanas |
-| `pm_paga` | notícia | — | só agendada | — | — | 50%: devolve 3.000; senão, só o texto |
-| `assalto` | notícia | 2 | caixa ≥ 15.000 | 5 | 15 | caixa −25% |
-| `some` | notícia, devedor | 3 | empréstimo ativo com risco ≥ 0,5 | 4 | 6 | empréstimo perdido (`lost`, saldo em `writtenOff`), boca −1 |
-| `tragedia` | notícia, devedor | 1 | empréstimo com 3+ semanas de atraso e `lastLevel` pressão ou primo | 8 | 20 | empréstimo perdido, boca −10, atenção +20 |
-| `gas` | notícia | 2 | — | 4 | 16 | choque −0,06 por 4 semanas |
-| `decimo` | notícia | 3 | semana ≥ 20 | 20 | — (uma vez) | choque +0,08 por 2 semanas |
-| `cartao` | notícia, devedor | 2 | empréstimo ativo com cartão do INSS | 6 | 10 | o empréstimo perde a garantia (`collateral = null`) |
+**Parâmetros** (`params.ts`, bloco `crisis`, com comentário em cada um): `raidsForTrial 2`, `evidenceForTrial 60`, `trialWeeks 6`, `prisonChance 0.7`, `lawyer { cost: 12_000, prisonChance: 0.25 }`, `deal { min: 8_000, cashShare: 0.4, mesadaDiscount: 0.5, heatAfter: 40 }`, `snitch { fearAfter: 0.3, heatAfter: 30 }`, `vanish { weeks: 8 }`, `exile { cashShare: 0.5 }`, `hit { delay: 4, weeks: 4, deathChance: 0.15, payShare: 0.6, militiaRate: 0.2 }`, `retireFromWeek 20`.
 
-(`milicia_recado`, `vereador_paga` e `pm_paga` são agendadas e não contam no sorteio; as 16 sorteáveis mais as 3 de seguimento dão 19.) Perder empréstimo usa a mesma rotina da busca (extraia `loseLoan(state, loan)` em `police.ts` se ainda não existir). Atenção mexida pelas ocorrências não é denúncia: some direto em `police.heat`, limitada a 0–100.
+**Estado e save:** `SAVE_VERSION` 7. `GameState` ganha `crisis`, `ended` e `primoGone`. Tipos `CrisisKind = 'processo' | 'jurado'`, `Ending = 'preso' | 'morto' | 'exilado' | 'aposentado'`. `DilemmaKind` ganha `'processo' | 'jurado'`. Migração 6→7: `crisis: null`, `ended: null`, `primoGone: false`.
 
-**Textos** (`src/content/incidents.ts`; a voz pode ser ajustada, o sentido não; nomes fictícios). A primeira opção listada é a padrão. Para cada id: título do cartão, corpo, rótulo e dica de cada opção, linha do Jornal da ocorrência e de cada escolha.
-- delegado: "Café com o delegado" / "O delegado Moacir passou para um café. Disse que o bairro anda agitado e que ele sabe acalmar." / "Agradecer o café" ("Ele não gostou.") / "Pagar a mesada · R$ 600 por semana" ("Inquérito fica mais raro enquanto pagar."). Jornal: mesada "Mesada combinada com o delegado. Toda sexta."; recusa "O delegado saiu sem terminar o café."; mesada falhou "A mesada atrasou. O delegado não ligou para cobrar. Isso é pior."
-- milicia: "O bairro tem dono" / "Dois homens de colete passaram para conhecer o negócio. Querem 10% do que entra." / "Pagar 10%" / "Dizer que o negócio é seu" ("Eles voltam."). Jornal da parte: "A parte do bairro: R$ X."
-- milicia_recado: "Recado" / "O primo apareceu com o olho roxo. Mandaram dizer que agora são 15%." / "Pagar 15%" / "Recusar de novo" ("Eles sabem onde fica a gaveta."). Jornal da recusa: "Levaram o cofre. R$ X. Ninguém viu nada."
-- rival: "Concorrência" / "Abriu um agiota na rua de baixo. Cobra 10% ao mês e não pergunta nada." / "Ignorar" ("Menos gente na porta por 8 semanas.") / "Mandar o primo conversar" ("Resolve. Chama atenção.").
-- rolar: "{nome} quer rolar" / "{nome} pede mais para pagar a própria parcela. Jura que o bico novo começa segunda." / "Recusar" / "Rolar a dívida" ("Em dia no caderninho. A dívida cresce."). Jornal: "{nome} rolou a dívida. Em dia no caderninho."
-- bem: "{nome} oferece a geladeira" / "{nome} oferece a geladeira para fechar a conta. Está ligada, tem gelo." / "Recusar" / "Aceitar a geladeira" ("Fecha a conta. Vende por uns R$ X."). Jornal: "Geladeira de {nome} vendida: R$ X. A conta fechou."
-- pastor: "Oferta" / "O pastor pede uma oferta para o telhado do templo." / "Dizer que está difícil" / "Dar R$ 1.000" ("O pastor fala bem de você no culto.").
-- vereador: "Entre amigos" / "O vereador Dorival pede R$ 5.000 até a eleição. Sem juros, entre amigos." / "Recusar" / "Emprestar" ("Ele conhece o delegado. Pagar, talvez."). vereador_paga: "O vereador devolveu os R$ 5.000. Pediu voto." / "O vereador perdeu a eleição. Os R$ 5.000 também."
-- radio: "Rádio comunitária" / "A rádio do bairro vai fazer um programa sobre juros." / "Ignorar" / "Patrocinar o programa · R$ 1.500" ("O programa vira sobre financiamento de carro.").
-- fianca: "O primo na blitz" / "O primo foi detido numa blitz. Estava com a lista de endereços." / "Deixar lá" ("Sem primo por 6 semanas. Ele pode falar.") / "Pagar a fiança · R$ 2.000".
-- pm: "Favor" / "Um PM do batalhão pede R$ 3.000. Diz que paga quando der." / "Recusar" / "Emprestar" ("A ronda passa menos."). pm_paga: "O PM devolveu os R$ 3.000. Trouxe um bolo." / "O PM foi transferido. Os R$ 3.000 ficaram."
-- assalto: "Entraram na sua casa de madrugada. Levaram R$ X da gaveta. Não dá para registrar BO."
-- some: "{nome} mudou de cidade de madrugada. A casa está para alugar."
-- tragedia: "{nome} não vai mais pagar. A família fechou a casa e pediu que ninguém passasse por lá." e, sempre logo abaixo, a nota "Se você ou alguém próximo precisar conversar, o CVV atende 24 horas pelo 188 ou em cvv.org.br." Sem piada, sem adjetivo.
-- gas: "O gás subiu de novo. O bairro aperta o cinto."
-- decimo: "Saiu o décimo terceiro de quem tem carteira assinada."
-- cartao: "O INSS trocou o cartão de benefício de {nome}. O antigo não passa mais."
+**Telas e textos** (`src/content/endings.ts` e `ui.ts`; a voz pode ser ajustada, o sentido não; morte sempre implícita):
+- Dilema `processo`: "Processo" / "O inquérito virou denúncia do Ministério Público. Usura, crime contra o sistema financeiro, lavagem. Julgamento em 6 semanas." Opções: "Esperar o julgamento" ("O juiz decide."), "Contratar advogado · R$ 12.000" ("Bom advogado. Caro por isso."), "Acertar com o delegado · R$ X" ("O processo some. De novo."), "Entregar o primo" ("Ele vai saber quem foi."), "Sumir por uns tempos" ("Oito semanas fora. O caderninho fica."), "Fugir de vez" ("Termina aqui. Leva o que está lá fora.").
+- Dilema `jurado`: "Jurado" / "O recado agora veio sem palavras. Faz duas noites que tem um carro parado na frente de casa." Opções: "Ficar" ("Ninguém expulsa você do seu bairro."), "Pagar · R$ X" ("Sessenta por cento do caixa, e 20% de tudo daqui para a frente."), "Sumir por uns tempos", "Fugir de vez".
+- Faixa da crise no Resumo, no lugar da do inquérito: "Processo · julgamento em N semanas" (+ " · com advogado") / "Jurado · N semanas".
+- Jornal: processo aberto "O Ministério Público ofereceu denúncia. Seu nome está na primeira linha."; advogado "Advogado contratado: R$ 12.000. Disse que já viu piores."; acordo "O processo voltou para a gaveta. Custo: R$ X."; entregar "O primo foi preso de manhã. Você estava em casa."; sumir "Bairro novo. O caderninho começa de novo."; absolvido "Absolvido por falta de provas. A Justiça liberou o bloqueio."; jurado aberto "O carro voltou a parar na frente de casa."; jurado acabou "O carro não voltou. A milícia agora leva 20%."; pagar a milícia "Pago: R$ X. O carro foi embora."
+- Políticas e Carteira com `primoGone`: o nível primo aparece desabilitado com "O primo não trabalha mais com você."
+- Bolso: no fim da aba, botão "Pendurar o caderninho" (desabilitado antes da semana 20 com "Só depois da semana 20."), confirmação "Encerrar a partida? Você leva o caixa e o bolso; a carteira fica na rua."
+- Tela final (`src/ui/EndScreen.tsx`, no lugar do jogo quando `ended`; o "Continuar" do menu leva a ela): título, duas linhas, placar grande, parcelas do placar, "Semanas: N · Emprestado: R$ X · Calote: R$ Y · Denúncias: Z", botão "Nova partida". Textos:
+  - Preso: "Preso" / "Usura, crime contra o sistema financeiro e lavagem. O juiz leu a sentença em quatro minutos." / "O que estava em seu nome ficou com a Justiça. O laranja e lá fora, não."
+  - Morto: "Fim" / "O velório foi de caixão fechado. O bairro não comentou." / "A família ficou com o que estava no seu nome e lá fora. {laranja} ficou com o resto."
+  - Exilado: "Exilado" / "Um ônibus de madrugada, uma mala, um nome novo." / "Metade do caixa na mala. O resto, lá fora."
+  - Aposentado: "Aposentado" / "Pendurou o caderninho. A carteira ficou na rua; alguém vai cobrar." / "Levou o caixa e o bolso."
 
-**Telas:** o `DilemmaCard` vira genérico (título, corpo e opções vindos do conteúdo por `kind`, com nome e valores interpolados; opção com custo maior que o caixa desabilitada). Com dois dilemas pendentes, mostra os dois, um embaixo do outro. Faixas pequenas no Resumo, abaixo dos medidores, para efeitos contínuos ativos: "Mesada: R$ 600/semana", "Milícia: 10% do que entra", "Rival na rua de baixo · até a semana N", "Primo fora · até a semana N". Painel dev: estado de `incidents` e um botão "Forçar ocorrência" com seletor de id (para testar no celular).
+**Testes do motor** (`tests/crise.test.ts`): gatilhos do processo (segunda busca; evidência ≥ 60; primeira busca com evidência baixa não abre); jurado agendado depois do `refusedTwice`; cada opção com efeito exato (custos, `primoGone`, `sumir` com semana + 8, empréstimos perdidos e medidores, `fugir` → exilado); julgamento com rng 0 (preso) e 0,99 (absolvido, bloqueio liberado); jurado: morte com rng 0, sobrevivência às 4 semanas com rng 0,99; placar de cada final; `retire` antes da semana 20 lança erro; `step` e `decide` lançam com `ended`; `levelFor` com `primoGone`; migração 6→7.
 
-**Estado e save:** `SAVE_VERSION` 6. `GameState.incidents` como acima. Migração 5→6: `incidents` zerado (`last: {}`, `scheduled: []`, `mesada: 0`, `militia: 'none'`, `militiaRate: 0`, os prazos em 0, `shock: { until: 0, payDelta: 0 }`).
+**Sim:** `WEEKS` passa a vir do env (padrão 30); o bot responde dilemas de crise com `CRISE=nada|advogado|acordo|entregar|sumir` (padrão `nada`; sem caixa, a padrão); partida encerrada para de avançar. Colunas novas: % com crise, % preso, % morto, % exilado. Alvos a 20% a.m., 8 sem, 100 rodadas, `WEEKS=40`, `INQ=correr`, `INC=padrao`:
+1. nada: crise em ≤ 5% das partidas.
+2. padrão: crise em 5–20%; preso em 3–15%.
+3. primo: crise em ≥ 25%; preso em ≥ 15%.
+4. primo com `CRISE=advogado`: preso ≤ 50% do preso com `CRISE=nada`.
+5. padrão com `INC=recusa`: morto em 10–40% das partidas.
 
-**Testes do motor** (`tests/ocorrencias.test.ts`): elegibilidade (gatilho, `minWeek`, `cooldown`, uma vez, um dilema por vez); cada opção de cada dilema com efeito exato; padrão sem resposta; mesada paga e falha sem caixa; parte da milícia sobre o recebido da semana; recado agendado em 3 semanas; rival tira pedido e baixa a taxa máxima (média em 200 sementes); primo fora vira pressão em `levelFor`; choque mexe em `payChance`; `rolar` e `bem` nos números do empréstimo; `some` e `tragedia` perdem o empréstimo; `cartao` tira a garantia; vereador e PM pagam ou não pelo sorteio agendado; migração 5→6. Teste de conteúdo: toda ocorrência e toda opção têm texto.
+Se errar, ajuste nesta ordem: 1 a 3 → `evidenceForTrial`, depois `raidsForTrial`, depois `prisonChance`; 4 → `lawyer.prisonChance`; 5 → `hit.deathChance`. Anote no log os valores finais e a tabela do sim.
 
-**Sim:** o bot responde dilemas com a opção padrão (`INC=padrao`), com a que paga quando o caixa cobre (`INC=paga`) ou com a recusa (`INC=recusa`: recusa milícia, delegado, pastor etc.); `INC=0` zera a chance semanal (mude o objeto `params` no sim). Coluna nova: ocorrências por partida. Alvos a 20% a.m., 8 sem, 100 rodadas, semana 30, política padrão:
-1. 7 a 12 ocorrências por partida, em média.
-2. Pelo menos 14 das 16 sorteáveis aparecem somadas as 100 partidas.
-3. Patrimônio com `INC=padrao` entre 80% e 100% do patrimônio com `INC=0`.
-4. `INC=paga` não fica mais de 10% acima de `INC=padrao` em patrimônio (pagar não é sempre o certo).
-5. Tragédia em no máximo 1 de cada 4 partidas com política primo.
+**Encaixe no código atual:** o jurado é agendado em `state.incidents.scheduled` (id novo `jurado`, só de seguimento) quando a milícia vira `refusedTwice`. `primoGone` entra no mesmo caminho do `primoOut` de `levelFor` (primo vira pressão) e esconde a opção `primo` do dilema `rival`. Custos de crise somam em `stats.spent`. Perder empréstimos no `sumir` usa `loseLoan` de `police.ts`. Opções de crise na tabela `dilemmaOptions` de `incidents.ts` (ou num `crisis.ts` novo que ela importe).
 
-Se errar, ajuste nesta ordem: 1 → chance semanal; 2 → pesos e gatilhos; 3 → `assalto` e a milícia; 4 → custos das opções pagas; 5 → peso da tragédia. Anote no log os valores finais e a tabela do sim.
+**Estado do balanço depois do PR das ocorrências** (20% a.m., 8 sem, 100 rodadas, semana 30, `INQ=correr`, `INC=padrao`): padrão 28,8 mil · inquérito 42% · busca 7% · tragédia 12%; primo 24,2 mil · 79% · 46% · 18%.
 
-**Estado do balanço depois do PR da polícia e do bolso** (20% a.m., 8 sem, 100 rodadas, semana 30, `INQ=correr`, sem bolso): nada 31,8 mil · inquérito 0% · busca 0%; padrão 35,1 mil · 38% · 10%; primo 28,3 mil · 86% · 57%. Bolso: `block.weeks` ficou em 14.
-
-**Pronto quando:** `ferramentas/testar.sh --tudo` verde, alvos do sim batidos, cartões de dilema e faixas legíveis em 360 px, checkbox marcado.
+**Pronto quando:** `ferramentas/testar.sh --tudo` verde, alvos do sim batidos, crise e tela final usáveis em 360 px, checkboxes de crise e finais marcados.
 
 Modelo: Sonnet, esforço médio — plano fechado, com números, textos, arquivos e alvos do sim.
 

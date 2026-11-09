@@ -1,5 +1,6 @@
 // Parâmetros de balanço. Diversão vence realismo nos números; a direção de cada efeito é real:
 // devedor mais arriscado e juro mais alto pagam menos e quebram mais.
+import type { Level } from '../engine/state';
 export const params = {
   startingCash: 20_000,
   /** Semanas de jornal guardadas no save. */
@@ -314,6 +315,8 @@ export const incidents = {
     minWeek: 8,
     cooldown: 20 as number | null,
     minLate: 3,
+    /** Só depois destes níveis de cobrança: a tragédia vem do primo, não da ligação. */
+    levels: ['primo'] as Level[],
     word: -10,
     heat: 20,
   },

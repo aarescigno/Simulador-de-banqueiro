@@ -124,6 +124,8 @@ describe('elegibilidade', () => {
     expect(ids(s)).toContain('bem');
     expect(ids(s)).not.toContain('tragedia');
     loan.lastLevel = 'pressao';
+    expect(ids(s)).not.toContain('tragedia');
+    loan.lastLevel = 'primo';
     expect(ids(s)).toContain('tragedia');
     loan.lastLevel = 'conversa';
     expect(ids(s)).not.toContain('tragedia');
