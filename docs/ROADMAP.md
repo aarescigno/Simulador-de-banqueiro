@@ -45,7 +45,7 @@ Objetivo: provar que o jogo é divertido antes de construir o resto.
 - [x] Crise do degrau 1 (advogado, sumir, acordo) e finais (preso, morto).
 
 **1b. Transição e ESC**
-- [ ] Dilema da lavagem para abrir a ESC (fachada, laranja, consultoria, devagar).
+- [x] Dilema da lavagem para abrir a ESC (fachada, laranja, consultoria, devagar).
 - [ ] Fichas de pequenas empresas; regras da ESC (município, capital próprio, porte).
 - [ ] Selic e economia local afetando calote.
 - [ ] 6–10 cartas de prática (legal, cinza, ilegal) com os quatro números.

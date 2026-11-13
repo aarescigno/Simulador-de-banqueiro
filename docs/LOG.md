@@ -6,6 +6,29 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-13 · Marco 1b, item 1 · Dilema da lavagem para abrir a ESC
+
+**Feito**
+- Motor: `src/engine/esc.ts` (`escAvailable`, `launderQuote`, `launder`, `tickEsc`, `catchFachada`, `escReady`, `escOpenBlock`, `carteiraSale`, `openEsc`); decisões `launder` e `openEsc`; `state.tier`, `laundering`, `esc`; `Loan.status` `'sold'`; parcela `'esc'` nos finais; `SAVE_VERSION` 8 com migração 7 → 8.
+- Conteúdo: `src/content/esc.ts` (textos, Jornal, tela "em breve"), parâmetros em `params.ts` (`esc`).
+- Interface: `EscPanel` no Bolso (quatro estados), faixa no Resumo, `EscScreen` (degrau 2, congelado até o item 2).
+- `sim`: `ESC=rota`; bot lava, junta caixa e abre. Sem `ESC` a saída do `sim` é idêntica à anterior (conferido com `diff`).
+- Testes: `tests/esc.test.ts` (25) e migração 7 → 8.
+
+**Sim** (`WEEKS=40 RATES=20 TERMS=8`, 300 rodadas; entre parênteses, 100): consultoria 41% (47%), sem. 30; fachada 48% (48%), sem. 32, pega 2%; laranja 53% (53%), sem. 28; devagar 64% (62%), sem. 37. Todos dentro das faixas do plano; parâmetros do plano mantidos. Com 100 rodadas consultoria e fachada ficam colados (47 e 48); com 300 a ordem do plano vale (41 < 48).
+
+**Decisões**
+- As confirmações usam o `ConfirmBar` em vez de `window.confirm`, porque a sessão anterior trocou todos os `window.confirm` do jogo por ele.
+- `escAvailable` no Jornal só sai se o `step` passa pela semana 20 (um "sumir" que pule a semana 20 não emite o aviso; o painel aparece igual).
+
+**Conferido na tela** (360 px, `scrollWidth` 360): painel cedo demais (com save v7 migrado), as quatro rotas, confirmação, em andamento, faixa no Resumo, pronto, confirmação de abrir, `EscScreen` com rota laranja e caderninho vendido, recarregar e voltar à tela, "Nova partida" com confirmação. Não conferido: painel com crise aberta e com inquérito/dilema bloqueando (só testes).
+
+**Pendente**: item 2 remove a trava de `tier` 2 em `step`/`decide`; ficha e rota gravadas ficam para a Receita (item 5).
+
+**Modelo:** Sonnet, esforço médio — plano fechado, sem decisão de design.
+
+---
+
 ## 2026-11-13 · Marco 1a · Correções do playtest virtual
 
 **Feito**

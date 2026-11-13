@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advanceWeeks, newGame, step } from '../src/engine/game';
 import { playBot } from '../sim/bot';
 import { deserialize, exportSave, importSave, SaveError, serialize } from '../src/engine/save';
+import { SAVE_VERSION } from '../src/engine/state';
 
 describe('save', () => {
   it('ida e volta em JSON', () => {
@@ -43,7 +44,7 @@ describe('migração', () => {
     }
     delete v1.stats.recovered;
     const migrated = deserialize(JSON.stringify(v1));
-    expect(migrated.saveVersion).toBe(7);
+    expect(migrated.saveVersion).toBe(SAVE_VERSION);
     expect(migrated.stats.recovered).toBe(0);
     for (const r of migrated.requests) {
       expect(r.assets[0]!.kind).toBe('celular');
@@ -70,7 +71,7 @@ describe('migração 2 → 3', () => {
     }
     delete v2.stats.forgiven;
     const m = deserialize(JSON.stringify(v2));
-    expect(m.saveVersion).toBe(7);
+    expect(m.saveVersion).toBe(SAVE_VERSION);
     expect(m.fear).toBe(0);
     expect(m.word).toBe(30);
     expect(m.complaints).toBe(0);
@@ -92,7 +93,7 @@ describe('migração 3 → 4', () => {
     delete v3.stats.seized;
     for (const r of v3.journal) delete r.heat;
     const m = deserialize(JSON.stringify(v3));
-    expect(m.saveVersion).toBe(7);
+    expect(m.saveVersion).toBe(SAVE_VERSION);
     expect(m.police).toEqual({ heat: 0, inquiry: null, cooldownUntil: 0, bribes: 0, raids: 0 });
     expect(m.dilemmas).toEqual([]);
     expect(m.stats.seized).toBe(0);
@@ -111,7 +112,7 @@ describe('migração 4 → 5', () => {
     delete v4.stats.fees;
     delete v4.stats.betrayed;
     const m = deserialize(JSON.stringify(v4));
-    expect(m.saveVersion).toBe(7);
+    expect(m.saveVersion).toBe(SAVE_VERSION);
     expect(m.pocket).toEqual({
       own: 0,
       laranja: 0,
@@ -136,10 +137,33 @@ describe('migração 6 → 7', () => {
     delete v6.ended;
     delete v6.primoGone;
     const m = deserialize(JSON.stringify(v6));
-    expect(m.saveVersion).toBe(7);
+    expect(m.saveVersion).toBe(SAVE_VERSION);
     expect(m.crisis).toBeNull();
     expect(m.ended).toBeNull();
     expect(m.primoGone).toBe(false);
     for (let i = 0; i < 3; i++) expect(() => step(m)).not.toThrow();
+  });
+});
+
+describe('migração 7 → 8', () => {
+  it('ganha degrau, lavagem, ESC e vendas', () => {
+    const s = playBot(newGame(7), 3, { monthlyRate: 20, weeks: 8 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- save antigo, sem tipo
+    const v7 = JSON.parse(serialize(s)) as Record<string, any>;
+    v7.saveVersion = 7;
+    delete v7.tier;
+    delete v7.laundering;
+    delete v7.esc;
+    delete v7.stats.sold;
+    const m = deserialize(JSON.stringify(v7));
+    expect(m.saveVersion).toBe(8);
+    expect(m.tier).toBe(1);
+    expect(m.laundering).toBeNull();
+    expect(m.esc).toBeNull();
+    expect(m.stats.sold).toBe(0);
+    let t = m;
+    for (let i = 0; i < 3; i++) {
+      expect(() => (t = step(t).state)).not.toThrow();
+    }
   });
 });

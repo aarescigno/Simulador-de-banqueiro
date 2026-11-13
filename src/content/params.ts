@@ -367,3 +367,19 @@ export const crisis = {
   /** Absolvido: a atenção cai para esta fração. */
   acquittedHeatAfter: 0.5,
 };
+
+/**
+ * Abrir a ESC (degrau 2): capital declarado exigido e as quatro rotas de lavagem. `tax` e `signing`
+ * são frações do capital; `weeks` é o prazo até o capital ficar limpo; `perWeek` é o teto semanal
+ * do MEI. `sale` é a fração do saldo devedor que o colega do ramo paga pelo caderninho (em dia ou
+ * atrasado).
+ */
+export const esc = {
+  fromWeek: 20,
+  capital: 25_000,
+  consultoria: { tax: 0.275, weeks: 1 },
+  fachada: { setup: 2_000, tax: 0.06, weeks: 6 },
+  laranja: { signing: 0.1, weeks: 1 },
+  devagar: { perWeek: 1_500 },
+  sale: { current: 0.4, late: 0.1 },
+};

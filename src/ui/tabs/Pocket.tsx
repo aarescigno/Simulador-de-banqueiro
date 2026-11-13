@@ -6,6 +6,7 @@ import { crisis as crisisParams, pocket as params } from '../../content/params';
 import { ui } from '../../content/ui';
 import { decide, protectedWealth, stashFee, unstashFee, type Compartment } from '../../engine';
 import { ConfirmBar } from '../ConfirmBar';
+import { EscPanel } from '../EscPanel';
 import type { TabProps } from '../Game';
 
 const order: Compartment[] = ['own', 'laranja', 'offshore'];
@@ -144,6 +145,8 @@ export function Pocket({ state, update }: TabProps) {
           onTake={() => doTake(c)}
         />
       ))}
+
+      <EscPanel state={state} update={update} />
 
       <div class="stack tight">
         {ask?.key === 'retire' ? (
