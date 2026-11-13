@@ -112,11 +112,11 @@ export const endingTexts: Record<Ending, EndingText> = {
     title: 'Preso',
     lines: () => [
       'Usura, crime contra o sistema financeiro e lavagem. O juiz leu a sentença em quatro minutos.',
-      'O que estava em seu nome ficou com a Justiça. O laranja e lá fora, não.',
+      'O que estava em seu nome ficou com a Justiça. O que ficou com o laranja e lá fora, não.',
     ],
   },
   morto: {
-    title: 'Fim',
+    title: 'Caixão fechado',
     lines: (laranja) => [
       'O velório foi de caixão fechado. O bairro não comentou.',
       `A família ficou com o que estava no seu nome e lá fora. ${laranja} ficou com o resto.`,

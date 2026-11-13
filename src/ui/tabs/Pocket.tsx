@@ -1,15 +1,22 @@
+import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { laranjaFor } from '../../content/pocket';
 import { money, percent } from '../../content/format';
 import { crisis as crisisParams, pocket as params } from '../../content/params';
 import { ui } from '../../content/ui';
 import { decide, protectedWealth, stashFee, unstashFee, type Compartment } from '../../engine';
+import { ConfirmBar } from '../ConfirmBar';
 import type { TabProps } from '../Game';
 
 const order: Compartment[] = ['own', 'laranja', 'offshore'];
 
 export function Pocket({ state, update }: TabProps) {
   const [text, setText] = useState('');
+  const [ask, setAsk] = useState<{
+    key: Compartment | 'retire';
+    text: string;
+    run: () => void;
+  } | null>(null);
   const amount = Number(text) || 0;
   const p = state.pocket;
   const laranja = laranjaFor(state.seed);
@@ -53,18 +60,34 @@ export function Pocket({ state, update }: TabProps) {
         : to === 'offshore'
           ? ui.pocket.confirmStash.offshore(a, money(fee))
           : null;
-    if (question && !window.confirm(question)) return;
-    update(decide(state, { type: 'stash', to, amount }));
-    setText('');
+    const run = () => {
+      update(decide(state, { type: 'stash', to, amount }));
+      setText('');
+    };
+    if (question) setAsk({ key: to, text: question, run });
+    else run();
   };
   const doTake = (from: Compartment) => {
+    const run = () => {
+      update(decide(state, { type: 'unstash', from, amount }));
+      setText('');
+    };
     if (from === 'offshore') {
       const fee = money(unstashFee(from, amount));
-      if (!window.confirm(ui.pocket.confirmTake.offshore(money(amount), fee))) return;
-    }
-    update(decide(state, { type: 'unstash', from, amount }));
-    setText('');
+      setAsk({ key: from, text: ui.pocket.confirmTake.offshore(money(amount), fee), run });
+    } else run();
   };
+  const confirmFor = (key: Compartment | 'retire') =>
+    ask && ask.key === key ? (
+      <ConfirmBar
+        text={ask.text}
+        onYes={() => {
+          setAsk(null);
+          ask.run();
+        }}
+        onNo={() => setAsk(null)}
+      />
+    ) : null;
 
   return (
     <div class="stack">
@@ -116,21 +139,30 @@ export function Pocket({ state, update }: TabProps) {
           balance={p[c]}
           stashReason={stashBlock(c)}
           takeReason={takeBlock(c)}
+          confirm={confirmFor(c)}
           onStash={() => doStash(c)}
           onTake={() => doTake(c)}
         />
       ))}
 
       <div class="stack tight">
-        <button
-          class="btn wide"
-          disabled={state.week < crisisParams.retireFromWeek}
-          onClick={() => {
-            if (window.confirm(ui.pocket.confirmRetire)) update(decide(state, { type: 'retire' }));
-          }}
-        >
-          {ui.pocket.retire}
-        </button>
+        {ask?.key === 'retire' ? (
+          confirmFor('retire')
+        ) : (
+          <button
+            class="btn wide"
+            disabled={state.week < crisisParams.retireFromWeek}
+            onClick={() =>
+              setAsk({
+                key: 'retire',
+                text: ui.pocket.confirmRetire,
+                run: () => update(decide(state, { type: 'retire' })),
+              })
+            }
+          >
+            {ui.pocket.retire}
+          </button>
+        )}
         {state.week < crisisParams.retireFromWeek && (
           <span class="small dim">{ui.pocket.retireTooEarly(crisisParams.retireFromWeek)}</span>
         )}
@@ -147,6 +179,7 @@ function Card(props: {
   takeReason: string | null;
   onStash: () => void;
   onTake: () => void;
+  confirm: ComponentChildren;
 }) {
   return (
     <article class="card stack tight">
@@ -173,6 +206,7 @@ function Card(props: {
           )}
         </div>
       </div>
+      {props.confirm}
     </article>
   );
 }

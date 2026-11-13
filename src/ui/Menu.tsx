@@ -3,6 +3,7 @@ import { exportSave, importSave, SaveError, type GameState } from '../engine';
 import { money } from '../content/format';
 import { ui } from '../content/ui';
 import { copyText } from './clipboard';
+import { ConfirmBar } from './ConfirmBar';
 import { DevPanel } from './DevPanel';
 
 const DEV_TAPS = 10;
@@ -18,6 +19,7 @@ interface Props {
 export function Menu({ state, onContinue, onNewGame, onLoad, update }: Props) {
   const [panel, setPanel] = useState<'none' | 'export' | 'import' | 'dev'>('none');
   const [taps, setTaps] = useState(0);
+  const [askNew, setAskNew] = useState(false);
 
   const tapVersion = () => {
     const n = taps + 1;
@@ -39,14 +41,26 @@ export function Menu({ state, onContinue, onNewGame, onLoad, update }: Props) {
             </span>
           </button>
         )}
-        <button
-          class="btn wide"
-          onClick={() => {
-            if (!state || confirm(ui.menu.confirmNewGame)) onNewGame();
-          }}
-        >
-          {ui.menu.newGame}
-        </button>
+        {askNew ? (
+          <ConfirmBar
+            text={ui.menu.confirmNewGame}
+            onYes={() => {
+              setAskNew(false);
+              onNewGame();
+            }}
+            onNo={() => setAskNew(false)}
+          />
+        ) : (
+          <button
+            class="btn wide"
+            onClick={() => {
+              if (state) setAskNew(true);
+              else onNewGame();
+            }}
+          >
+            {ui.menu.newGame}
+          </button>
+        )}
         {state && (
           <button class="btn wide" onClick={() => setPanel('export')}>
             {ui.menu.exportSave}
@@ -74,12 +88,7 @@ export function Menu({ state, onContinue, onNewGame, onLoad, update }: Props) {
         <ExportPanel text={exportSave(state)} onClose={() => setPanel('none')} />
       )}
       {panel === 'import' && (
-        <ImportPanel
-          onClose={() => setPanel('none')}
-          onLoad={(s) => {
-            if (!state || confirm(ui.menu.confirmNewGame)) onLoad(s);
-          }}
-        />
+        <ImportPanel onClose={() => setPanel('none')} replaces={!!state} onLoad={onLoad} />
       )}
     </main>
   );
@@ -112,7 +121,16 @@ function ExportPanel({ text, onClose }: { text: string; onClose: () => void }) {
   );
 }
 
-function ImportPanel({ onClose, onLoad }: { onClose: () => void; onLoad: (s: GameState) => void }) {
+function ImportPanel({
+  onClose,
+  onLoad,
+  replaces,
+}: {
+  onClose: () => void;
+  onLoad: (s: GameState) => void;
+  replaces: boolean;
+}) {
+  const [staged, setStaged] = useState<GameState | null>(null);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   return (
@@ -127,23 +145,33 @@ function ImportPanel({ onClose, onLoad }: { onClose: () => void; onLoad: (s: Gam
           onInput={(e) => setText(e.currentTarget.value)}
         />
         {error && <p class="red small">{ui.menu.importError(error)}</p>}
-        <div class="row">
-          <button
-            class="btn primary"
-            onClick={() => {
-              try {
-                onLoad(importSave(text));
-              } catch (e) {
-                setError(e instanceof SaveError ? e.message : String(e));
-              }
-            }}
-          >
-            {ui.menu.load}
-          </button>
-          <button class="btn" onClick={onClose}>
-            {ui.menu.close}
-          </button>
-        </div>
+        {staged ? (
+          <ConfirmBar
+            text={ui.menu.confirmNewGame}
+            onYes={() => onLoad(staged)}
+            onNo={() => setStaged(null)}
+          />
+        ) : (
+          <div class="row">
+            <button
+              class="btn primary"
+              onClick={() => {
+                try {
+                  const s = importSave(text);
+                  if (replaces) setStaged(s);
+                  else onLoad(s);
+                } catch (e) {
+                  setError(e instanceof SaveError ? e.message : String(e));
+                }
+              }}
+            >
+              {ui.menu.load}
+            </button>
+            <button class="btn" onClick={onClose}>
+              {ui.menu.close}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

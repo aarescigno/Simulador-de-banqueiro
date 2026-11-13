@@ -30,12 +30,25 @@ export function Summary({ state, update, goTo }: TabProps) {
 
   return (
     <div class="stack">
+      {state.dilemmas.map((d) => (
+        <DilemmaCard key={d.id} dilemma={d} state={state} update={update} />
+      ))}
+
       <div class="stats">
         <Stat label={ui.summary.cash} value={money(state.cash)} tone="green" />
         <Stat label={ui.summary.receivable} value={money(receivable(state))} />
         <Stat label={ui.summary.debtors} value={String(active.length)} />
         <Stat label={ui.summary.late} value={String(late)} tone={late ? 'amber' : ''} />
-        <Stat label={ui.summary.pocket} value={money(protectedWealth(state))} tone="green" />
+        <Stat
+          label={ui.summary.pocket}
+          value={money(protectedWealth(state))}
+          note={
+            state.pocket.blocked > 0
+              ? ui.summary.pocketBlocked(money(state.pocket.blocked))
+              : undefined
+          }
+          tone="green"
+        />
         <Stat
           label={ui.summary.writtenOff}
           value={money(state.stats.writtenOff)}
@@ -94,10 +107,6 @@ export function Summary({ state, update, goTo }: TabProps) {
         </div>
       )}
 
-      {state.dilemmas.map((d) => (
-        <DilemmaCard key={d.id} dilemma={d} state={state} update={update} />
-      ))}
-
       {state.requests.length > 0 && (
         <button class="btn wide amber-btn" onClick={() => goTo('portfolio')}>
           {ui.summary.waiting(state.requests.length)} {ui.summary.seeRequests}
@@ -120,11 +129,22 @@ export function Summary({ state, update, goTo }: TabProps) {
   );
 }
 
-export function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
+export function Stat({
+  label,
+  value,
+  tone,
+  note,
+}: {
+  label: string;
+  value: string;
+  tone?: string;
+  note?: string;
+}) {
   return (
     <div class="stat">
       <span class="dim small">{label}</span>
       <span class={`mono big ${tone ?? ''}`}>{value}</span>
+      {note && <span class="small amber">{note}</span>}
     </div>
   );
 }

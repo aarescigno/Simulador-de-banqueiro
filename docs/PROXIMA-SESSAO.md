@@ -8,7 +8,7 @@ Para começar, basta abrir uma sessão neste repositório e dizer: **"Leia `docs
 
 ## Próxima etapa
 
-**Antes de tudo: playtest do Marco 1a.** O 1a fechou nesta leva (atenção policial, bolso, 19 ocorrências, crise e finais; PRs #6 a #8). Se o dono abriu issues de bug ou de balanço depois de jogar, elas vêm antes do 1b. Pontos para observar no celular: o primo ficou caro (crise em 55% das partidas de 40 semanas, preso em 30%); a tragédia aparece em ~12% das partidas com a política padrão; o padrão com ocorrências tem pouca busca (7%); a tela final só tem "Nova partida".
+O playtest virtual do Marco 1a foi feito (~17 partidas por bot Playwright em 360 px) e as correções de interface entraram no PR dele. Os achados de balanço que ficam para decisão do dono estão na entrada mais nova do `docs/LOG.md`.
 
 **Marco 1b, item 1 — dilema da lavagem para abrir a ESC.** Plano fechado (Opus, 13/11/2026). Executar sem decidir design; o que ficou em aberto diz como decidir.
 
