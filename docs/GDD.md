@@ -279,6 +279,8 @@ docs/         este documento, roadmap e referência
 
 Para abrir a ESC você precisa de capital declarado, mas o seu dinheiro é de agiotagem. A transição obriga a escolher: declarar como "consultoria", passar por um comércio de fachada, usar um laranja como sócio ou subir devagar só com dinheiro limpo. A lavagem é estrutural, não opcional, e é exatamente o que a seção 14 da referência descreve.
 
+**Como está implementado (Marco 1b, item 1).** Da semana 20 em diante, o Bolso oferece abrir a ESC, que exige R$ 25 mil de capital declarado. O jogador escolhe uma de quatro rotas: consultoria (imposto de 27,5% do capital, pronta em 1 semana), lava-rápido de fachada (R$ 2 mil de ponto mais 6%, pronta em 6 semanas, e uma busca nesse meio-tempo leva o capital ao bloqueio), laranja de sócio (luva de 10% e comissão do laranja, pronta em 1 semana, e a empresa fica no nome dele) ou devagar (MEI, R$ 1.500 por semana, sem custo). O dinheiro sai do caixa e fica separado até ficar limpo. Pronto o capital, "Abrir a ESC" vende o caderninho a um colega do ramo (40% do saldo devedor dos em dia, 10% dos atrasados), manda o resto do caixa para o bolso em seu nome e põe a partida no degrau 2. Por enquanto o degrau 2 é uma tela "em breve" com a ficha do degrau 1; os riscos de Receita de cada rota ficam gravados para o item 5.
+
 Uma condenação no degrau 1 fecha a porta dos degraus regulados (3+) para o seu nome. A saída é um testa de ferro, que vira um fio solto permanente.
 
 ### Degrau 2 — ESC (turno: semana)

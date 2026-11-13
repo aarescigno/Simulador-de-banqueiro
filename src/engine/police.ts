@@ -5,6 +5,7 @@ import {
   pocket as pocketParams,
   police,
 } from '../content/params';
+import { catchFachada } from './esc';
 import type { Rng } from './rng';
 import type {
   Dilemma,
@@ -124,6 +125,7 @@ function raid(state: GameState, rng: Rng, events: GameEvent[], evidence: number)
     loseLoan(state, loan);
     lost.push(loan.debtor.short);
   }
+  catchFachada(state, events);
   const pk = state.pocket;
   if (pk.own > 0 || pk.blocked > 0) {
     pk.blocked += pk.own;

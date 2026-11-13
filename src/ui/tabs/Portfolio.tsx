@@ -217,6 +217,8 @@ function LoanRow({
   } else if (l.status === 'lost') {
     status = ui.portfolio.lost(money(l.totalDue - l.totalPaid));
     tone = 'red';
+  } else if (l.status === 'sold') {
+    status = ui.portfolio.sold;
   } else if (l.status === 'forgiven') {
     status = ui.portfolio.forgivenStatus(money(l.totalDue - l.totalPaid));
   } else if (l.missedStreak > 0) {

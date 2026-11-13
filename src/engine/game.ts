@@ -11,6 +11,7 @@ import {
   type LoanTerms,
 } from './agiota';
 import { retire, tickCrisis } from './crisis';
+import { launder, openEsc, tickEsc } from './esc';
 import { emptyIncidents } from './incidents';
 import { emptyPocket, stash, tickPocket, unstash } from './pocket';
 import { applyChoice, resolveDefaults, tickIncidents } from './incidents';
@@ -24,6 +25,7 @@ import {
   type GameEvent,
   type GameState,
   type Level,
+  type LaunderRoute,
 } from './state';
 
 export type Decision =
@@ -35,7 +37,11 @@ export type Decision =
   | { type: 'choose'; dilemmaId: number; option: DilemmaOption }
   | { type: 'stash'; to: Compartment; amount: number }
   | { type: 'unstash'; from: Compartment; amount: number }
+  | { type: 'launder'; route: LaunderRoute }
+  | { type: 'openEsc' }
   | { type: 'retire' };
+
+const ESC_SOON = 'A ESC abre numa próxima versão.';
 
 export interface StepResult {
   state: GameState;
@@ -64,6 +70,7 @@ export function newGame(seed: number): GameState {
       betrayed: 0,
       spent: 0,
       returned: 0,
+      sold: 0,
     },
     policy: { collection: { ...collection.defaultPolicy } },
     fear: 0,
@@ -76,6 +83,9 @@ export function newGame(seed: number): GameState {
     crisis: null,
     ended: null,
     primoGone: false,
+    tier: 1,
+    laundering: null,
+    esc: null,
     queue: [{ week: 1, event: { type: 'gameStarted' } }],
     journal: [],
     devUsed: false,
@@ -93,6 +103,16 @@ export function newGame(seed: number): GameState {
  */
 export function decide(prev: GameState, d: Decision): GameState {
   if (prev.ended) throw new Error('A partida acabou.');
+  if (prev.tier === 2) throw new Error(ESC_SOON);
+  if (d.type === 'launder') {
+    const state = structuredClone(prev);
+    return schedule(state, state.week, launder(state, d.route));
+  }
+  if (d.type === 'openEsc') {
+    const state = structuredClone(prev);
+    openEsc(state);
+    return state;
+  }
   if (d.type === 'retire') {
     const state = structuredClone(prev);
     retire(state);
@@ -194,6 +214,7 @@ export function step(
   rng: Rng = createRng(prev.rngState),
 ): StepResult {
   if (prev.ended) throw new Error('A partida acabou.');
+  if (prev.tier === 2) throw new Error(ESC_SOON);
   let state = prev;
   for (const d of decisions) state = decide(state, d);
   state = structuredClone(state);
@@ -223,6 +244,7 @@ export function step(
   tickPocket(state, rng, events);
   tickIncidents(state, rng, events);
   tickCrisis(state, rng, events);
+  if (!state.ended) tickEsc(state, events);
 
   state.journal.push({
     week: state.week,
@@ -259,7 +281,7 @@ export function devGiveMoney(state: GameState, amount: number): GameState {
 /** Avança semanas sem responder pedidos (eles expiram). */
 export function advanceWeeks(state: GameState, weeks: number): GameState {
   let s = state;
-  for (let i = 0; i < weeks && !s.ended; i++) s = step(s).state;
+  for (let i = 0; i < weeks && !s.ended && s.tier === 1; i++) s = step(s).state;
   return s;
 }
 

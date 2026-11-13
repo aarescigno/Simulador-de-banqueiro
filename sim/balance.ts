@@ -3,6 +3,11 @@ import { newGame, protectedWealth, type Compartment, type DilemmaOption } from '
 import { allIncidents, drawable } from '../src/engine';
 import { incidents as incidentParams } from '../src/content/params';
 import { playBot, policies } from './bot';
+import type { LaunderRoute } from '../src/engine';
+
+/** Mediana de uma lista; '-' se vazia. */
+const median = (xs: number[]): string =>
+  xs.length ? String([...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]) : '-';
 
 const RUNS = Number(process.env.RUNS ?? 100);
 /** WEEKS=n: semanas de cada partida. Padrão: 30. */
@@ -21,6 +26,8 @@ const pocket = (process.env.POCKET || null) as Compartment | null;
 const incMode = process.env.INC ?? 'padrao';
 if (incMode === '0') incidentParams.chance = 0;
 const incidents = (incMode === '0' ? 'padrao' : incMode) as 'padrao' | 'paga' | 'recusa';
+/** ESC=consultoria|fachada|laranja|devagar: o bot abre a ESC por esta rota. Padrão: nenhuma. */
+const esc = (process.env.ESC || null) as LaunderRoute | null;
 const policyNames = (process.env.POLICY ?? 'padrao').split(',');
 for (const policyName of policyNames) {
   for (const monthlyRate of (process.env.RATES ?? '5,10,20,30,50,80').split(',').map(Number)) {
@@ -42,6 +49,9 @@ for (const policyName of policyNames) {
       let jailed = 0;
       let dead = 0;
       let exiled = 0;
+      let opened = 0;
+      let caught = 0;
+      const openWeeks: number[] = [];
       const seen = new Set<string>();
       for (let seed = 1; seed <= RUNS; seed++) {
         const s = playBot(newGame(seed), WEEKS, {
@@ -53,6 +63,7 @@ for (const policyName of policyNames) {
           incidents,
           crisis,
           pocket,
+          esc,
         });
         fear += s.fear;
         word += s.word;
@@ -62,6 +73,11 @@ for (const policyName of policyNames) {
         if (events.some((e) => e.type === 'inquiryOpened')) inquiries += 1;
         if (events.some((e) => e.type === 'raid')) raids += 1;
         if (events.some((e) => e.type === 'crisisOpened')) crises += 1;
+        if (s.tier === 2) {
+          opened += 1;
+          openWeeks.push(s.esc!.openedWeek);
+        }
+        if (events.some((e) => e.type === 'fachadaCaught')) caught += 1;
         if (s.ended?.kind === 'preso') jailed += 1;
         if (s.ended?.kind === 'morto') dead += 1;
         if (s.ended?.kind === 'exilado') exiled += 1;
@@ -93,7 +109,10 @@ for (const policyName of policyNames) {
           `medo ${(fear / RUNS).toFixed(0)} | boca ${(word / RUNS).toFixed(0)} | denúncias ${(complaints / RUNS).toFixed(1)} | atenção ${(heat / RUNS).toFixed(0)} | ` +
           `inquérito ${((100 * inquiries) / RUNS).toFixed(0)}% | busca ${((100 * raids) / RUNS).toFixed(0)}% | ` +
           `protegido ${Math.round(kept / RUNS)} | bloqueado ${Math.round(blocked / RUNS)} | ` +
-          `ocorrências ${(occurrences / RUNS).toFixed(1)} | distintas ${drawable.filter((id) => seen.has(id)).length}/${drawable.length} (${allIncidents.filter((id) => seen.has(id)).length}/${allIncidents.length}) | tragédia ${((100 * tragedies) / RUNS).toFixed(0)}% | crise ${((100 * crises) / RUNS).toFixed(0)}% | preso ${((100 * jailed) / RUNS).toFixed(0)}% | morto ${((100 * dead) / RUNS).toFixed(0)}% | exilado ${((100 * exiled) / RUNS).toFixed(0)}%`,
+          `ocorrências ${(occurrences / RUNS).toFixed(1)} | distintas ${drawable.filter((id) => seen.has(id)).length}/${drawable.length} (${allIncidents.filter((id) => seen.has(id)).length}/${allIncidents.length}) | tragédia ${((100 * tragedies) / RUNS).toFixed(0)}% | crise ${((100 * crises) / RUNS).toFixed(0)}% | preso ${((100 * jailed) / RUNS).toFixed(0)}% | morto ${((100 * dead) / RUNS).toFixed(0)}% | exilado ${((100 * exiled) / RUNS).toFixed(0)}%` +
+          (esc
+            ? ` | ESC ${esc} ${((100 * opened) / RUNS).toFixed(0)}% | sem. ESC ${median(openWeeks)} | fachada pega ${((100 * caught) / RUNS).toFixed(0)}%`
+            : ''),
       );
     }
   }

@@ -145,6 +145,7 @@ export const partLabels: Record<EndingPart, string> = {
   blocked: 'Bloqueado',
   laranja: 'Com o laranja',
   offshore: 'Lá fora',
+  esc: 'Capital da ESC',
 };
 
 export const endScreen = {

@@ -74,6 +74,7 @@ export const ui = {
     active: 'Na rua',
     noLoans: 'Nenhum empréstimo na rua.',
     closed: 'Encerrados',
+    sold: 'Vendido a um colega do ramo',
     asks: (amount: string) => `Pede ${amount}`,
     rate: 'Taxa',
     rateValue: (pct: string) => `${pct} ao mês`,

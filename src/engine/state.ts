@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 export interface Debtor {
   /** Nome completo, para a ficha. */
@@ -75,7 +75,7 @@ export interface Loan {
   override: Level | null;
   /** Nível aplicado na última semana de atraso. */
   lastLevel: Level | null;
-  status: 'active' | 'paid' | 'defaulted' | 'forgiven' | 'lost';
+  status: 'active' | 'paid' | 'defaulted' | 'forgiven' | 'lost' | 'sold';
   endWeek?: number;
 }
 
@@ -185,7 +185,7 @@ export interface Crisis {
 export type Ending = 'preso' | 'morto' | 'exilado' | 'aposentado';
 
 /** Parcelas do placar de um final. */
-export type EndingPart = 'cash' | 'own' | 'blocked' | 'laranja' | 'offshore';
+export type EndingPart = 'cash' | 'own' | 'blocked' | 'laranja' | 'offshore' | 'esc';
 
 export interface Ended {
   kind: Ending;
@@ -209,6 +209,45 @@ export interface Pocket {
   blockedUntil: number;
   /** Já mandou dinheiro ao doleiro (para sempre). */
   doleiro: boolean;
+}
+
+/** Como o capital da ESC é lavado. */
+export type LaunderRoute = 'consultoria' | 'fachada' | 'laranja' | 'devagar';
+
+/** Lavagem em andamento: o capital separado fica fora do caixa até a ESC abrir. */
+export interface Laundering {
+  route: LaunderRoute;
+  startWeek: number;
+  /** Já separado do caixa; no devagar, cresce a cada semana. */
+  capital: number;
+  /** Primeira semana em que a ESC pode abrir; null enquanto o devagar não completa. */
+  readyWeek: number | null;
+}
+
+/** Foto do degrau 1 na abertura da ESC. */
+export interface Ficha {
+  weeks: number;
+  complaints: number;
+  raids: number;
+  bribes: number;
+  heat: number;
+  primoGone: boolean;
+  mesada: boolean;
+  militia: MilitiaState;
+}
+
+/** A ESC aberta (degrau 2). */
+export interface Esc {
+  openedWeek: number;
+  capital: number;
+  route: LaunderRoute;
+  /** Empréstimos na rua vendidos ao colega do ramo. */
+  soldLoans: number;
+  /** Preço da venda do caderninho. */
+  sold: number;
+  /** Caixa que sobrou do degrau 1 e foi para o bolso em seu nome. */
+  leftover: number;
+  ficha: Ficha;
 }
 
 export type ComplaintSource = 'pressao' | 'primo' | 'moto' | 'celular' | 'inss' | 'ambiente';
@@ -255,6 +294,10 @@ export type GameEvent =
     }
   | { type: 'crisisOpened'; kind: CrisisKind }
   | { type: 'crisisEnded'; kind: CrisisKind; how: 'absolvido' | 'sobreviveu' }
+  | { type: 'escAvailable' }
+  | { type: 'laundered'; route: LaunderRoute; cost: number; who: string }
+  | { type: 'escReady'; route: LaunderRoute }
+  | { type: 'fachadaCaught'; amount: number }
   | { type: 'mesadaFailed' }
   | { type: 'militiaCut'; amount: number }
   | {
@@ -300,6 +343,8 @@ export interface Stats {
   spent: number;
   /** Voltou ao caixa de favores (vereador e PM). */
   returned: number;
+  /** Recebido com a venda do caderninho ao abrir a ESC. */
+  sold: number;
 }
 
 export interface GameState {
@@ -339,6 +384,12 @@ export interface GameState {
   ended: Ended | null;
   /** O primo foi entregue: vira pressão para sempre. */
   primoGone: boolean;
+  /** Degrau da partida: 1 = agiota, 2 = ESC. */
+  tier: number;
+  /** Lavagem do capital da ESC em andamento, se houver. */
+  laundering: Laundering | null;
+  /** A ESC aberta; só existe no degrau 2. */
+  esc: Esc | null;
   /** Marca partidas mexidas pelo painel dev. */
   devUsed: boolean;
 }

@@ -38,6 +38,12 @@ export function endingFor(state: GameState, kind: Ending): Ended {
               { part: 'laranja', amount: p.laranja },
               { part: 'offshore', amount: p.offshore },
             ];
+  const l = state.laundering;
+  if (l) {
+    const own = l.route === 'laranja';
+    const counts = kind === 'aposentado' || (kind === 'preso' && own) || (kind === 'morto' && !own);
+    if (counts) parts.push({ part: 'esc', amount: l.capital });
+  }
   const score = parts.reduce((sum, x) => sum + x.amount, 0);
   return { kind, week: state.week, score, parts };
 }

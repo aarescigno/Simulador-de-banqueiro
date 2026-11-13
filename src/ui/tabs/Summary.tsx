@@ -1,8 +1,17 @@
-import { heatBand, bandRank, protectedWealth, receivable, step, type HeatBand } from '../../engine';
+import {
+  heatBand,
+  bandRank,
+  escReady,
+  protectedWealth,
+  receivable,
+  step,
+  type HeatBand,
+} from '../../engine';
 import { DilemmaCard } from '../DilemmaCard';
 import { collection } from '../../content/params';
 import { money } from '../../content/format';
 import { crisisStrip } from '../../content/endings';
+import { progressStrip } from '../../content/esc';
 import { strips } from '../../content/incidents';
 import { reportLines } from '../../content/journal';
 import { ui } from '../../content/ui';
@@ -25,6 +34,14 @@ export function Summary({ state, update, goTo }: TabProps) {
     inc.militia === 'paying' ? strips.militia(inc.militiaRate) : null,
     state.week < inc.rivalUntil ? strips.rival(inc.rivalUntil - 1) : null,
     state.week < inc.primoOutUntil ? strips.primoOut(inc.primoOutUntil - 1) : null,
+    state.laundering
+      ? progressStrip(
+          state.laundering.route,
+          state.laundering.readyWeek,
+          state.laundering.capital,
+          escReady(state),
+        )
+      : null,
   ].filter((t): t is string => t !== null);
   const late = active.filter((l) => l.missedStreak > 0).length;
 

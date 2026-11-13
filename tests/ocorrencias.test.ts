@@ -20,7 +20,13 @@ import {
 import { tickPolice } from '../src/engine/police';
 import { createRng, type Rng } from '../src/engine/rng';
 import { deserialize, serialize } from '../src/engine/save';
-import type { GameEvent, GameState, IncidentId, Loan } from '../src/engine/state';
+import {
+  SAVE_VERSION,
+  type GameEvent,
+  type GameState,
+  type IncidentId,
+  type Loan,
+} from '../src/engine/state';
 import { playBot } from '../sim/bot';
 
 function fixedRng(x: number): Rng {
@@ -739,7 +745,7 @@ describe('migração 5 → 6', () => {
     delete v5.stats.spent;
     delete v5.stats.returned;
     const m = deserialize(JSON.stringify(v5));
-    expect(m.saveVersion).toBe(7);
+    expect(m.saveVersion).toBe(SAVE_VERSION);
     expect(m.incidents).toEqual({
       last: {},
       scheduled: [],

@@ -10,6 +10,11 @@ import {
   type Dilemma,
   type DilemmaOption,
   defaultOption,
+  escAvailable,
+  escOpenBlock,
+  launderQuote,
+  receivable,
+  type LaunderRoute,
   type GameState,
 } from '../src/engine';
 import { pocket } from '../src/content/params';
@@ -41,6 +46,11 @@ export interface BotOptions {
   crisis?: 'nada' | 'advogado' | 'acordo' | 'entregar' | 'sumir';
   /** Guarda o caixa acima de POCKET_KEEP neste compartimento (POCKET=...). Padrão: nenhum. */
   pocket?: Compartment | null;
+  /**
+   * Abre a ESC por esta rota (ESC=...): lava assim que dá (no devagar, já), junta caixa para a
+   * rota se ainda falta pouco e abre quando o capital fica limpo. Padrão: nenhuma.
+   */
+  esc?: LaunderRoute | null;
 }
 
 /** Caixa que o bot mantém para emprestar; o resto vai para o bolso. */
@@ -110,7 +120,20 @@ export function botDecide(state: GameState, o: BotOptions): GameState {
     s = decide(s, { type: 'choose', dilemmaId: d.id, option });
   }
   if (s.ended) return s;
+  let saving = false;
+  if (o.esc) {
+    if (escOpenBlock(s) === null) return decide(s, { type: 'openEsc' });
+    if (!s.laundering && escAvailable(s)) {
+      const outlay = launderQuote(s, o.esc).outlay;
+      if (o.esc === 'devagar' || outlay <= s.cash) s = decide(s, { type: 'launder', route: o.esc });
+      else saving = s.cash + 0.7 * receivable(s) >= outlay;
+    } else if (s.laundering && o.esc !== 'devagar') saving = true;
+  }
   for (const r of [...s.requests]) {
+    if (saving) {
+      s = decide(s, { type: 'refuse', requestId: r.id });
+      continue;
+    }
     if (!canAccept(s, r.id) || r.amount > s.cash * (o.maxShare ?? 1)) {
       s = decide(s, { type: 'refuse', requestId: r.id });
       continue;
@@ -131,9 +154,9 @@ export function botDecide(state: GameState, o: BotOptions): GameState {
 export function playBot(start: GameState, weeks: number, o: BotOptions): GameState {
   let s = start;
   if (o.policy) s = decide(s, { type: 'setPolicy', collection: o.policy });
-  for (let i = 0; i < weeks && !s.ended; i++) {
+  for (let i = 0; i < weeks && !s.ended && s.tier === 1; i++) {
     s = botDecide(s, o);
-    if (!s.ended) s = step(s).state;
+    if (!s.ended && s.tier === 1) s = step(s).state;
   }
   return s;
 }

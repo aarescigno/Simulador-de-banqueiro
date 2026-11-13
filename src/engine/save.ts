@@ -55,6 +55,14 @@ const migrations: Record<number, Migration> = {
   }),
   // 6 → 7: crise e finais.
   6: (old) => ({ ...old, crisis: null, ended: null, primoGone: false }),
+  // 7 → 8: degrau 1, lavagem e ESC.
+  7: (old) => ({
+    ...old,
+    tier: 1,
+    laundering: null,
+    esc: null,
+    stats: { ...(old.stats as Obj), sold: 0 },
+  }),
 };
 
 export class SaveError extends Error {}

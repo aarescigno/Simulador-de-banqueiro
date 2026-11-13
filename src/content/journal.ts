@@ -2,6 +2,7 @@
 import type { ComplaintSource, GameEvent, HeatBand, Level, WeekReport } from '../engine/state';
 import { collateralText } from './collateral';
 import { crisisLine } from './endings';
+import { escLine } from './esc';
 import { dilemmaTexts, newsTexts, continuing } from './incidents';
 import { money, percent } from './format';
 import { params } from './params';
@@ -138,6 +139,14 @@ export function reportLines(r: WeekReport): string[] {
       if (line) lines.push(line);
     } else if (e.type === 'crisisOpened' || e.type === 'crisisEnded') {
       const line = crisisLine(e);
+      if (line) lines.push(line);
+    } else if (
+      e.type === 'escAvailable' ||
+      e.type === 'laundered' ||
+      e.type === 'escReady' ||
+      e.type === 'fachadaCaught'
+    ) {
+      const line = escLine(e);
       if (line) lines.push(line);
     } else if (e.type === 'militiaCut') lines.push(continuing.militiaCut(e.amount));
     else if (e.type === 'mesadaFailed') lines.push(continuing.mesadaFailed);
