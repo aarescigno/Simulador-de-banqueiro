@@ -21,6 +21,8 @@ export const ui = {
     ok: 'Entendi',
   },
 
+  confirm: { yes: 'Confirmar', no: 'Voltar' },
+
   menu: {
     continue: 'Continuar',
     newGame: 'Nova partida',
@@ -54,6 +56,7 @@ export const ui = {
     cash: 'Caixa',
     receivable: 'A receber',
     pocket: 'Bolso',
+    pocketBlocked: (amount: string) => `${amount} bloqueados`,
     writtenOff: 'Calote',
     debtors: 'Devedores',
     late: 'Atrasados',

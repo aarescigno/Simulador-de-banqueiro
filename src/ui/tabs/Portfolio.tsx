@@ -3,6 +3,7 @@ import { collateralText } from '../../content/collateral';
 import { params } from '../../content/params';
 import { money, percent } from '../../content/format';
 import { ui } from '../../content/ui';
+import { ConfirmBar } from '../ConfirmBar';
 import {
   decide,
   isPrimoOut,
@@ -203,6 +204,7 @@ function LoanRow({
   state: GameState;
   update: (s: GameState) => void;
 }) {
+  const [askForgive, setAskForgive] = useState(false);
   const level = l.status === 'active' ? levelFor(state.policy, l, isPrimoOut(state)) : null;
   let status: string;
   let tone = 'dim';
@@ -276,16 +278,20 @@ function LoanRow({
               </button>
             ))}
           </div>
-          <button
-            class="btn"
-            onClick={() => {
-              if (window.confirm(ui.portfolio.confirmForgive(money(l.totalDue - l.totalPaid)))) {
+          {askForgive ? (
+            <ConfirmBar
+              text={ui.portfolio.confirmForgive(money(l.totalDue - l.totalPaid))}
+              onYes={() => {
+                setAskForgive(false);
                 update(decide(state, { type: 'forgive', loanId: l.id }));
-              }
-            }}
-          >
-            {ui.portfolio.forgive}
-          </button>
+              }}
+              onNo={() => setAskForgive(false)}
+            />
+          ) : (
+            <button class="btn" onClick={() => setAskForgive(true)}>
+              {ui.portfolio.forgive}
+            </button>
+          )}
         </div>
       )}
     </article>

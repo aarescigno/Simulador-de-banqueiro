@@ -6,6 +6,25 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-13 · Marco 1a · Correções do playtest virtual
+
+**Feito**
+- Playtest virtual do Marco 1a: ~17 partidas por bot Playwright em 360 px.
+- Corrigido: (1) Resumo mostra o valor bloqueado pela Justiça junto do Bolso ("R$ 15 mil bloqueados", `summary.pocketBlocked`); (2) todos os `window.confirm` da interface (Pendurar o caderninho, guardar/trazer no laranja e no offshore, perdoar dívida, nova partida, importar save) viraram confirmação no painel, em dois passos "Confirmar" / "Voltar" (`src/ui/ConfirmBar.tsx`); (3) texto do final preso: "O que ficou com o laranja e lá fora, não."; (4) dilema pendente agora aparece no topo do Resumo, sem mudar a regra; (5) final morto ganhou título "Caixão fechado".
+- Fora do escopo e intocados: balanço, sondagem de taxa, botões da tela final, motor, save.
+
+**Pendente de decisão do dono (balanço)**
+- (a) Ofertar 100% a.m. e fechar na contraproposta revela o teto do devedor sem custo; estratégia dominante.
+- (b) O cauteloso a 12% a.m. se aposenta na semana 20 com menos que o capital inicial.
+- (c) Recusar a milícia duas vezes leva ao jurado entre as semanas 13 e 23.
+- (d) Ocorrências Pastor, Concorrência, Favor do PM e Rolar a dívida repetem 2 a 3 vezes em 40 semanas.
+- (e) Recusa de oferta só aparece no Jornal da semana seguinte.
+- (f) A tela final só tem "Nova partida".
+
+**Modelo:** Sonnet, esforço médio — correções de interface já decididas, sem mudança de regra.
+
+---
+
 ## 2026-11-09 · Marco 1a · Crise do degrau 1 e finais · PR #8
 
 **Feito**
