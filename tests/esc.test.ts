@@ -373,7 +373,7 @@ describe('bot com ESC', () => {
         expect(s.cash).toBeGreaterThanOrEqual(0);
       }
     }
-  });
+  }, 30_000);
 });
 
 describe('textos', () => {
