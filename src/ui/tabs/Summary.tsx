@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import {
   heatBand,
   bandRank,
@@ -16,6 +17,9 @@ import { strips } from '../../content/incidents';
 import { reportLines } from '../../content/journal';
 import { ui } from '../../content/ui';
 import type { TabProps } from '../Game';
+import { tick } from '../fx/haptic';
+import { Num } from '../fx/Num';
+import { Spark } from '../fx/Spark';
 
 const bandTone: Record<HeatBand, string> = { baixa: 'green', media: 'amber', alta: 'red' };
 
@@ -43,6 +47,7 @@ export function Summary({ state, update, goTo }: TabProps) {
         )
       : null,
   ].filter((t): t is string => t !== null);
+  const cashSeries = [...state.journal.slice(-12).map((j) => j.cash), state.cash];
   const late = active.filter((l) => l.missedStreak > 0).length;
 
   return (
@@ -52,13 +57,16 @@ export function Summary({ state, update, goTo }: TabProps) {
       ))}
 
       <div class="stats">
-        <Stat label={ui.summary.cash} value={money(state.cash)} tone="green" />
-        <Stat label={ui.summary.receivable} value={money(receivable(state))} />
-        <Stat label={ui.summary.debtors} value={String(active.length)} />
-        <Stat label={ui.summary.late} value={String(late)} tone={late ? 'amber' : ''} />
+        <Stat label={ui.summary.cash} value={state.cash} format={money} tone="green" delta>
+          <Spark values={cashSeries} />
+        </Stat>
+        <Stat label={ui.summary.receivable} value={receivable(state)} format={money} />
+        <Stat label={ui.summary.debtors} value={active.length} />
+        <Stat label={ui.summary.late} value={late} tone={late ? 'amber' : ''} />
         <Stat
           label={ui.summary.pocket}
-          value={money(protectedWealth(state))}
+          value={protectedWealth(state)}
+          format={money}
           note={
             state.pocket.blocked > 0
               ? ui.summary.pocketBlocked(money(state.pocket.blocked))
@@ -68,7 +76,8 @@ export function Summary({ state, update, goTo }: TabProps) {
         />
         <Stat
           label={ui.summary.writtenOff}
-          value={money(state.stats.writtenOff)}
+          value={state.stats.writtenOff}
+          format={money}
           tone={state.stats.writtenOff ? 'red' : ''}
         />
       </div>
@@ -79,6 +88,7 @@ export function Summary({ state, update, goTo }: TabProps) {
           text={ui.meters.fear.text}
           value={state.fear}
           before={prev.fear}
+          fear
         />
         <Meter
           label={ui.meters.word.name}
@@ -90,13 +100,18 @@ export function Summary({ state, update, goTo }: TabProps) {
           <span class="dim small">{ui.meters.heat.name}</span>
           <span class={`mono big ${bandTone[band]}`}>
             {ui.heat[band]}{' '}
-            <span class="small dim">
+            <span class="small arrow">
               {bandRank(band) > bandRank(bandBefore)
                 ? '▲'
                 : bandRank(band) < bandRank(bandBefore)
                   ? '▼'
                   : ''}
             </span>
+          </span>
+          <span class={`leds ${bandTone[band]} lv${bandRank(band) + 1}`} aria-hidden="true">
+            <i />
+            <i />
+            <i />
           </span>
           <span class="dim small">{ui.meters.heat.text}</span>
         </div>
@@ -113,7 +128,7 @@ export function Summary({ state, update, goTo }: TabProps) {
       )}
 
       {state.crisis && (
-        <div class="inquiry-bar small red">
+        <div class="inquiry-bar small red red-pulse">
           {crisisStrip(state.crisis.kind, state.crisis.weeksLeft, state.crisis.lawyer)}
         </div>
       )}
@@ -139,7 +154,14 @@ export function Summary({ state, update, goTo }: TabProps) {
         )}
       </div>
 
-      <button class="btn primary wide" disabled={pending} onClick={() => update(step(state).state)}>
+      <button
+        class={pending ? 'btn primary wide' : 'btn primary wide pulse'}
+        disabled={pending}
+        onClick={() => {
+          tick();
+          update(step(state).state);
+        }}
+      >
         {pending ? ui.dilemma.decideFirst : ui.summary.advance}
       </button>
     </div>
@@ -149,18 +171,29 @@ export function Summary({ state, update, goTo }: TabProps) {
 export function Stat({
   label,
   value,
+  format = String,
   tone,
   note,
+  delta,
+  children,
 }: {
   label: string;
-  value: string;
+  value: string | number;
+  format?: (n: number) => string;
   tone?: string;
   note?: string;
+  delta?: boolean;
+  children?: ComponentChildren;
 }) {
   return (
     <div class="stat">
       <span class="dim small">{label}</span>
-      <span class={`mono big ${tone ?? ''}`}>{value}</span>
+      {typeof value === 'number' ? (
+        <Num class={`mono big ${tone ?? ''}`} value={value} format={format} delta={delta} />
+      ) : (
+        <span class={`mono big ${tone ?? ''}`}>{value}</span>
+      )}
+      {children}
       {note && <span class="small amber">{note}</span>}
     </div>
   );
@@ -171,7 +204,9 @@ function Meter({
   text,
   value,
   before,
+  fear,
 }: {
+  fear?: boolean;
   label: string;
   text: string;
   value: number;
@@ -179,11 +214,22 @@ function Meter({
 }) {
   const delta = Math.round(value) - Math.round(before);
   const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '';
+  const v = Math.max(0, Math.min(100, value));
+  const tone = !fear ? 'green' : v > 75 ? 'red' : v > 50 ? 'amber' : 'green';
   return (
     <div class="meter">
       <span class="dim small">{label}</span>
       <span class="mono big">
-        {Math.round(value)} <span class="small dim">{arrow}</span>
+        <Num value={Math.round(value)} flash={false} />{' '}
+        {arrow && (
+          <span class="small arrow" key={arrow + Math.round(value)}>
+            {arrow}
+          </span>
+        )}
+      </span>
+      <span class="gauge" aria-hidden="true">
+        <span class={`gauge-fill ${tone}`} style={{ transform: `scaleX(${v / 100})` }} />
+        <span class="gauge-mark" style={{ left: `${Math.max(0, Math.min(100, before))}%` }} />
       </span>
       <span class="dim small">{text}</span>
     </div>
