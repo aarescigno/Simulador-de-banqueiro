@@ -210,4 +210,31 @@ export const ui = {
     empty: 'Nenhuma edição ainda. Avance uma semana.',
     edition: (w: number) => `Semana ${w}`,
   },
+
+  art: {
+    stamps: {
+      paid: 'QUITADO',
+      defaulted: 'CALOTE',
+      lost: 'PERDIDO',
+      sold: 'VENDIDO',
+      forgiven: 'PERDOADO',
+      cnpj: 'CNPJ ATIVO',
+    },
+    emblem: 'Emblema da Agiota S.A.: caderno de espiral, moeda e selo.',
+    face: (short: string) => `Retrato de ${short}`,
+    installments: (paid: number, total: number, missed: number) =>
+      `${paid} de ${total} parcelas pagas${missed > 0 ? `, ${missed} em atraso` : ''}.`,
+    empty: {
+      requests: 'Banquinho vazio ao lado de uma porta entreaberta.',
+      loans: 'Caderno de espiral em branco com uma caneta.',
+      journal: 'Jornal dobrado.',
+    },
+    endings: {
+      preso: 'Janela com grade e um banco estreito.',
+      morto: 'Cadeira vazia, um caderno em cima e uma vela apagada.',
+      exilado: 'Avião subindo sobre o horizonte, duas palmeiras.',
+      aposentado: 'Guarda-sol, cadeira de praia e o sol baixo sobre o mar.',
+    },
+    storefront: 'Fachada de lojinha de rua, porta de enrolar meio aberta.',
+  },
 };

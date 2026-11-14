@@ -4,6 +4,7 @@ import { params } from '../../content/params';
 import { money, percent } from '../../content/format';
 import { ui } from '../../content/ui';
 import { ConfirmBar } from '../ConfirmBar';
+import { Empty, Face, Installments, Stamp, type Tone } from '../art';
 import {
   decide,
   isPrimoOut,
@@ -19,6 +20,14 @@ import type { TabProps } from '../Game';
 
 const levelOrder: Level[] = ['conversa', 'pressao', 'primo'];
 
+const stampTone: Record<Exclude<Loan['status'], 'active'>, Tone> = {
+  paid: 'green',
+  defaulted: 'red',
+  lost: 'red',
+  sold: 'dim',
+  forgiven: 'amber',
+};
+
 export function Portfolio({ state, update }: TabProps) {
   const active = state.loans.filter((l) => l.status === 'active');
   const closed = state.loans
@@ -29,7 +38,12 @@ export function Portfolio({ state, update }: TabProps) {
   return (
     <div class="stack">
       <h2>{ui.portfolio.requests}</h2>
-      {state.requests.length === 0 && <p class="dim">{ui.portfolio.noRequests}</p>}
+      {state.requests.length === 0 && (
+        <>
+          <Empty kind="requests" />
+          <p class="dim">{ui.portfolio.noRequests}</p>
+        </>
+      )}
       {state.requests.map((r) => (
         <RequestCard
           key={r.id}
@@ -45,7 +59,12 @@ export function Portfolio({ state, update }: TabProps) {
       ))}
 
       <h2>{ui.portfolio.active}</h2>
-      {active.length === 0 && <p class="dim">{ui.portfolio.noLoans}</p>}
+      {active.length === 0 && (
+        <>
+          <Empty kind="loans" />
+          <p class="dim">{ui.portfolio.noLoans}</p>
+        </>
+      )}
       {state.primoGone && <p class="amber small">{ui.levels.primoGone}</p>}
       {active.map((l) => (
         <LoanRow key={l.id} loan={l} state={state} update={update} />
@@ -88,7 +107,7 @@ function RequestCard({
   return (
     <article class="card stack">
       <div class="debtor">
-        <span class="avatar mono">{r.debtor.initials}</span>
+        <Face debtor={r.debtor} tone="dim" />
         <div>
           <strong>{r.debtor.short}</strong>
           <div class="dim small">
@@ -230,9 +249,9 @@ function LoanRow({
   }
 
   return (
-    <article class={`card loan ${l.status !== 'active' ? 'closed' : ''}`}>
+    <article class={`card loan ${l.status !== 'active' ? 'closed art-stamped' : ''}`}>
       <div class="debtor">
-        <span class="avatar mono">{l.debtor.initials}</span>
+        <Face debtor={l.debtor} tone={tone as Tone} />
         <div>
           <strong>{l.debtor.short}</strong>
           <div class={`small ${tone}`}>{status}</div>
@@ -242,6 +261,14 @@ function LoanRow({
           <div class="dim">{ui.portfolio.rateShort(percent(l.monthlyRate))}</div>
         </div>
       </div>
+      {l.status !== 'active' && (
+        <div class="art-stamp-row">
+          <Stamp text={ui.art.stamps[l.status]} tone={stampTone[l.status]} decorative />
+        </div>
+      )}
+      {l.status === 'active' && (
+        <Installments total={l.weeks} paid={l.paidInstallments} missed={l.missedStreak} />
+      )}
       {l.status === 'active' && (
         <div class="row between small mono dim">
           <span>{ui.portfolio.progress(l.paidInstallments, l.weeks)}</span>
