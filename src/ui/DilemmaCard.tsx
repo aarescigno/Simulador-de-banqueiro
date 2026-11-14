@@ -2,6 +2,7 @@ import { decide, type Dilemma, type GameState } from '../engine';
 import { money } from '../content/format';
 import { dilemmaTexts, type TextCtx } from '../content/incidents';
 import { ui } from '../content/ui';
+import { tick } from './fx/haptic';
 
 interface Props {
   dilemma: Dilemma;
@@ -30,9 +31,10 @@ export function DilemmaCard({ dilemma, state, update }: Props) {
             <button
               class="btn wide"
               disabled={!afford}
-              onClick={() =>
-                update(decide(state, { type: 'choose', dilemmaId: dilemma.id, option }))
-              }
+              onClick={() => {
+                tick();
+                update(decide(state, { type: 'choose', dilemmaId: dilemma.id, option }));
+              }}
             >
               {o.showCost && cost > 0 ? `${label} · ${money(cost)}` : label}
             </button>

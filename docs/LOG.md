@@ -6,6 +6,29 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-14 · Extra (fora do roadmap) · Polimento visual: movimento, brilho e desenhos
+
+**Feito**
+- Pedido direto do dono, fora da etapa do briefing. Só interface: motor, balanço e save intactos.
+- Movimento e brilho (`src/ui/fx.css`, `src/ui/fx/`): scanlines, grade e brilho de fósforo; `Num` (número que conta, com lampejo verde/vermelho) e variação do caixa flutuando na barra do topo; transição entre abas e barrinha indicadora; entrada escalonada de cartões; recorte de jornal que "cai na mesa"; barra nos medidores de medo e boca a boca com marca da semana anterior; LEDs da atenção policial; `Spark` (gráfico seco do caixa); pulso âmbar em dilema e inquérito, vermelho na crise; vibração curta ao avançar a semana.
+- Desenhos em traço (`src/ui/art.css`, `src/ui/art/`): `Emblem` no menu, `Face` (retrato 3×4 gerado do nome do devedor, com anel de status), `Stamp` (QUITADO, CALOTE, PERDIDO, VENDIDO, PERDOADO, CNPJ ATIVO), `Installments` (régua de parcelas), `Empty` (estados vazios), `EndingArt` (um desenho por final) e `Storefront` (fachada da ESC). Textos novos em `ui.art`.
+
+**Decisões**
+- Sem dependência nova: CSS, SVG inline e hooks Preact. Tudo desliga com `prefers-reduced-motion`.
+- Variação visual dos rostos vem de hash do nome (`art/hash.ts`), não do RNG do motor.
+- Classes de desenho começam com `art-`; efeitos gerais ficam no `fx.css`.
+
+**Pendências**
+- Conferido em 360 px: menu, Resumo, Carteira, Bolso, Jornal, dilema e finais preso, morto e aposentado. A tela da ESC e o final exilado só foram vistos em página de teste, não dentro do app.
+- Observar no celular: peso das scanlines na leitura e fluidez das animações no Android.
+
+**Próximo passo**
+- O do briefing, sem mudança: Marco 1b, item 2 (planejar com o Opus).
+
+**Modelo:** Fable 5.2, esforço médio, para o plano e a revisão; execução delegada a dois subagentes Sonnet.
+
+---
+
 ## 2026-11-13 · Marco 1b, item 1 · Dilema da lavagem para abrir a ESC
 
 **Feito**

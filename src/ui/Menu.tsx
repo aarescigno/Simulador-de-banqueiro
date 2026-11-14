@@ -4,6 +4,7 @@ import { money } from '../content/format';
 import { ui } from '../content/ui';
 import { copyText } from './clipboard';
 import { ConfirmBar } from './ConfirmBar';
+import { Emblem } from './art';
 import { DevPanel } from './DevPanel';
 
 const DEV_TAPS = 10;
@@ -29,7 +30,11 @@ export function Menu({ state, onContinue, onNewGame, onLoad, update }: Props) {
 
   return (
     <main class="menu">
-      <h1>{ui.title}</h1>
+      <Emblem />
+      <h1>
+        {ui.title}
+        <span class="art-cursor" aria-hidden="true" />
+      </h1>
       <p class="dim">{ui.tagline}</p>
       <div class="menu-actions">
         {state && (

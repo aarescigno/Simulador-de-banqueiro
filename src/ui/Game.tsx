@@ -17,6 +17,7 @@ import { Pocket } from './tabs/Pocket';
 import { Policies } from './tabs/Policies';
 import { Portfolio } from './tabs/Portfolio';
 import { Summary } from './tabs/Summary';
+import { Num } from './fx/Num';
 
 export type TabId = keyof typeof ui.tabs;
 
@@ -50,13 +51,18 @@ export function Game({ state, update, onMenu }: GameProps) {
         <button class="icon-btn" onClick={onMenu} aria-label={ui.header.back}>
           <ChevronLeft size={20} />
         </button>
-        <span class="mono">{ui.header.week(state.week)}</span>
-        <span class="mono green">{money(state.cash)}</span>
+        <span class="mono week-tick" key={state.week}>
+          {ui.header.week(state.week)}
+        </span>
+        <Num class="mono green cash" value={state.cash} format={money} delta />
       </header>
       <section class="content">
-        <View state={state} update={update} goTo={setTab} />
+        <div class="tab-view" key={tab}>
+          <View state={state} update={update} goTo={setTab} />
+        </div>
       </section>
-      <nav class="tabbar">
+      <nav class="tabbar" style={{ '--i': tabs.findIndex((t) => t.id === tab) }}>
+        <span class="tab-indicator" aria-hidden="true" />
         {tabs.map(({ id, icon: Icon }) => (
           <button
             key={id}
@@ -67,7 +73,9 @@ export function Game({ state, update, onMenu }: GameProps) {
             <Icon size={20} />
             <span>{ui.tabs[id]}</span>
             {id === 'portfolio' && state.requests.length > 0 && (
-              <span class="badge mono">{state.requests.length}</span>
+              <span class="badge mono" key={state.requests.length}>
+                {state.requests.length}
+              </span>
             )}
           </button>
         ))}

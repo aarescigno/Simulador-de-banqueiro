@@ -1,5 +1,6 @@
+import { BedDouble, Citrus, TreePalm, type LucideIcon } from 'lucide-preact';
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { laranjaFor } from '../../content/pocket';
 import { money, percent } from '../../content/format';
 import { crisis as crisisParams, pocket as params } from '../../content/params';
@@ -8,8 +9,14 @@ import { decide, protectedWealth, stashFee, unstashFee, type Compartment } from 
 import { ConfirmBar } from '../ConfirmBar';
 import { EscPanel } from '../EscPanel';
 import type { TabProps } from '../Game';
+import { Num } from '../fx/Num';
 
 const order: Compartment[] = ['own', 'laranja', 'offshore'];
+const icons: Record<Compartment, LucideIcon> = {
+  own: BedDouble,
+  laranja: Citrus,
+  offshore: TreePalm,
+};
 
 export function Pocket({ state, update }: TabProps) {
   const [text, setText] = useState('');
@@ -95,7 +102,7 @@ export function Pocket({ state, update }: TabProps) {
       <h2>{ui.pocket.title}</h2>
       <div class="stat">
         <span class="dim small">{ui.pocket.protectedLabel}</span>
-        <span class="mono big green">{money(protectedWealth(state))}</span>
+        <Num class="mono big green" value={protectedWealth(state)} format={money} />
         <span class="dim small">{ui.pocket.tagline}</span>
       </div>
       {p.blocked > 0 && (
@@ -135,6 +142,7 @@ export function Pocket({ state, update }: TabProps) {
       {order.map((c) => (
         <Card
           key={c}
+          icon={icons[c]}
           name={names[c]}
           phrase={phrases[c]}
           balance={p[c]}
@@ -175,6 +183,7 @@ export function Pocket({ state, update }: TabProps) {
 }
 
 function Card(props: {
+  icon: LucideIcon;
   name: string;
   phrase: string;
   balance: number;
@@ -184,11 +193,26 @@ function Card(props: {
   onTake: () => void;
   confirm: ComponentChildren;
 }) {
+  const Icon = props.icon;
+  const first = useRef(true);
+  const [lit, setLit] = useState(false);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    setLit(true);
+    const t = setTimeout(() => setLit(false), 600);
+    return () => clearTimeout(t);
+  }, [props.balance]);
   return (
-    <article class="card stack tight">
+    <article class={lit ? 'card stack tight lit' : 'card stack tight'}>
       <div class="row between">
-        <strong>{props.name}</strong>
-        <span class="mono">{money(props.balance)}</span>
+        <strong class="row compartment">
+          <Icon size={16} color="var(--dim)" aria-hidden="true" />
+          {props.name}
+        </strong>
+        <Num class="mono" value={props.balance} format={money} />
       </div>
       <p class="small dim phrase">{props.phrase}</p>
       <div class="pair">

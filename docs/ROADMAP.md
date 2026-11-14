@@ -102,6 +102,7 @@ Objetivo: provar que o jogo é divertido antes de construir o resto.
 
 ## Marco 6 — Extras
 
+- [x] Polimento visual da skin de terminal: movimento, brilho e desenhos em traço.
 - [ ] Skin "app de fintech".
 - [ ] Interface que sobe de classe com o degrau.
 - [ ] Origens do banqueiro com modificadores.

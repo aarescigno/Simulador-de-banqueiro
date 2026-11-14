@@ -11,6 +11,10 @@
   --ink: #1d1b16;
   --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
   --serif: Georgia, 'Times New Roman', serif;
+  --glow-green: 0 0 10px rgb(61 220 132 / 0.35);
+  --glow-amber: 0 0 10px rgb(242 179 61 / 0.35);
+  --glow-red: 0 0 10px rgb(255 107 107 / 0.35);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   color-scheme: dark;
 }
 * {

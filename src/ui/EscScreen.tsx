@@ -4,6 +4,7 @@ import { money } from '../content/format';
 import { laranjaFor } from '../content/pocket';
 import { ui } from '../content/ui';
 import { heatBand, protectedWealth, type GameState } from '../engine';
+import { Storefront } from './art';
 import { ConfirmBar } from './ConfirmBar';
 
 interface Props {
@@ -28,6 +29,7 @@ export function EscScreen({ state, onNewGame }: Props) {
   ];
   return (
     <main class="end stack">
+      <Storefront />
       <h1 class="green">{screen.title}</h1>
       <p>{screen.opening(esc.openedWeek)}</p>
       <p class="dim">{screen.origin(esc.route, laranjaFor(state.seed))}</p>
