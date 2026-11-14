@@ -57,7 +57,7 @@ export function Summary({ state, update, goTo }: TabProps) {
       ))}
 
       <div class="stats">
-        <Stat label={ui.summary.cash} value={state.cash} format={money} tone="green" delta>
+        <Stat label={ui.summary.cash} value={state.cash} format={money} tone="green">
           <Spark values={cashSeries} />
         </Stat>
         <Stat label={ui.summary.receivable} value={receivable(state)} format={money} />
