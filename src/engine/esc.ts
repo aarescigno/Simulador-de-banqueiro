@@ -1,6 +1,7 @@
 // Abrir a ESC: lavagem do capital em quatro rotas, venda do caderninho e a passagem ao degrau 2.
 import { esc as E, pocket as pocketParams } from '../content/params';
 import { laranjaFor } from '../content/pocket';
+import { enterEsc } from './escLoans';
 import type { GameEvent, GameState, Laundering, LaunderRoute, Loan } from './state';
 
 const round100 = (x: number) => Math.round(x / 100) * 100;
@@ -125,8 +126,11 @@ export function carteiraSale(state: GameState): { loans: Loan[]; price: number }
   return { loans, price: round100(raw) };
 }
 
-/** Abre a ESC: vende o caderninho, passa o resto ao bolso e vira o degrau 2. Muta o estado (cópia). */
-export function openEsc(state: GameState): void {
+/**
+ * Abre a ESC: vende o caderninho, passa o resto ao bolso e vira o degrau 2. Muta o estado (cópia).
+ * `enter` falso pula o `enterEsc` (só o sim usa, para comparar com a versão anterior).
+ */
+export function openEsc(state: GameState, enter = true): void {
   const block = escOpenBlock(state);
   if (block) throw new Error(`Não dá para abrir a ESC agora (${block}).`);
   const l = state.laundering!;
@@ -161,4 +165,5 @@ export function openEsc(state: GameState): void {
   state.tier = 2;
   state.laundering = null;
   state.requests = [];
+  if (enter) enterEsc(state);
 }

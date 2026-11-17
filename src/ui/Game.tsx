@@ -12,6 +12,10 @@ import type { ComponentType } from 'preact';
 import type { GameState } from '../engine';
 import { money } from '../content/format';
 import { ui } from '../content/ui';
+import { EscPocket } from './esc/EscPocket';
+import { EscPolicies } from './esc/EscPolicies';
+import { EscPortfolio } from './esc/EscPortfolio';
+import { EscSummary } from './esc/EscSummary';
 import { Journal } from './tabs/Journal';
 import { Pocket } from './tabs/Pocket';
 import { Policies } from './tabs/Policies';
@@ -35,6 +39,14 @@ const tabs: { id: TabId; icon: LucideIcon; view: ComponentType<TabProps> }[] = [
   { id: 'journal', icon: Newspaper, view: Journal },
 ];
 
+const escViews: Record<TabId, ComponentType<TabProps>> = {
+  summary: EscSummary,
+  portfolio: EscPortfolio,
+  policies: EscPolicies,
+  pocket: EscPocket,
+  journal: Journal,
+};
+
 interface GameProps {
   state: GameState;
   update: (s: GameState) => void;
@@ -43,7 +55,7 @@ interface GameProps {
 
 export function Game({ state, update, onMenu }: GameProps) {
   const [tab, setTab] = useState<TabId>('summary');
-  const View = tabs.find((t) => t.id === tab)!.view;
+  const View = state.tier === 2 ? escViews[tab] : tabs.find((t) => t.id === tab)!.view;
 
   return (
     <div class="game">

@@ -4,18 +4,9 @@ import { params } from '../../content/params';
 import { money, percent } from '../../content/format';
 import { ui } from '../../content/ui';
 import { ConfirmBar } from '../ConfirmBar';
+import { RequestCard } from '../RequestCard';
 import { Empty, Face, Installments, Stamp, type Tone } from '../art';
-import {
-  decide,
-  isPrimoOut,
-  levelFor,
-  quote,
-  type CollateralKind,
-  type GameState,
-  type Level,
-  type Loan,
-  type LoanRequest,
-} from '../../engine';
+import { decide, isPrimoOut, levelFor, type GameState, type Level, type Loan } from '../../engine';
 import type { TabProps } from '../Game';
 
 const levelOrder: Level[] = ['conversa', 'pressao', 'primo'];
@@ -48,7 +39,22 @@ export function Portfolio({ state, update }: TabProps) {
         <RequestCard
           key={r.id}
           request={r}
-          cash={state.cash}
+          limits={params.terms}
+          memory="agiota"
+          header={
+            <div class="debtor">
+              <Face debtor={r.debtor} tone="dim" />
+              <div>
+                <strong>{r.debtor.short}</strong>
+                <div class="dim small">
+                  {r.debtor.name} · {r.debtor.profession}
+                </div>
+              </div>
+              <span class="mono amber big right">{money(r.amount)}</span>
+            </div>
+          }
+          canLend={r.amount <= state.cash}
+          noLendLabel={ui.portfolio.noCash}
           onLend={(monthlyRate, weeks, collateral) =>
             update(
               decide(state, { type: 'accept', requestId: r.id, monthlyRate, weeks, collateral }),
@@ -79,138 +85,6 @@ export function Portfolio({ state, update }: TabProps) {
         </>
       )}
     </div>
-  );
-}
-
-// Lembra os últimos termos usados enquanto o app está aberto.
-let lastTerms = { rate: params.terms.rate.default, weeks: params.terms.weeks.default };
-
-function RequestCard({
-  request: r,
-  cash,
-  onLend,
-  onRefuse,
-}: {
-  request: LoanRequest;
-  cash: number;
-  onLend: (rate: number, weeks: number, collateral: CollateralKind | null) => void;
-  onRefuse: () => void;
-}) {
-  const [rate, setRate] = useState(lastTerms.rate);
-  const [weeks, setWeeks] = useState(lastTerms.weeks);
-  const [collateral, setCollateral] = useState<CollateralKind | null>(null);
-  const counter = r.counter;
-  const q = quote(r.amount, { monthlyRate: rate, weeks });
-  const affordable = r.amount <= cash;
-  const { rate: rl, weeks: wl } = params.terms;
-
-  return (
-    <article class="card stack">
-      <div class="debtor">
-        <Face debtor={r.debtor} tone="dim" />
-        <div>
-          <strong>{r.debtor.short}</strong>
-          <div class="dim small">
-            {r.debtor.name} · {r.debtor.profession}
-          </div>
-        </div>
-        <span class="mono amber big right">{money(r.amount)}</span>
-      </div>
-      <p class="reason">“{r.reason}”</p>
-
-      <div class="stack tight">
-        <span class="dim small">{ui.portfolio.collateral}</span>
-        <div class="row">
-          <button
-            class={`chip ${collateral === null ? 'on' : ''}`}
-            aria-pressed={collateral === null}
-            onClick={() => setCollateral(null)}
-          >
-            {ui.portfolio.noCollateral}
-          </button>
-          {r.assets.map((a) => {
-            const t = collateralText[a.kind];
-            return (
-              <button
-                key={a.kind}
-                class={`chip ${collateral === a.kind ? 'on' : ''}`}
-                aria-pressed={collateral === a.kind}
-                onClick={() => setCollateral(a.kind)}
-              >
-                {ui.portfolio.asset(t.label, money(a.value), t.perMonth)}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <label class="slider">
-        <span class="row between">
-          <span class="dim small">{ui.portfolio.rate}</span>
-          <span class="mono">{ui.portfolio.rateValue(percent(rate))}</span>
-        </span>
-        <input
-          type="range"
-          min={rl.min}
-          max={rl.max}
-          step={rl.step}
-          value={rate}
-          onInput={(e) => setRate(Number(e.currentTarget.value))}
-        />
-      </label>
-      <label class="slider">
-        <span class="row between">
-          <span class="dim small">{ui.portfolio.term}</span>
-          <span class="mono">{ui.portfolio.termValue(weeks)}</span>
-        </span>
-        <input
-          type="range"
-          min={wl.min}
-          max={wl.max}
-          step={wl.step}
-          value={weeks}
-          onInput={(e) => setWeeks(Number(e.currentTarget.value))}
-        />
-      </label>
-      <p class="mono small">{ui.portfolio.quote(money(q.installment), money(q.totalDue))}</p>
-
-      {counter && (
-        <div class="row between">
-          <p class="reason amber">
-            {ui.portfolio.counter(
-              percent(counter.rate),
-              counter.collateral && collateralText[counter.collateral].noun,
-            )}
-          </p>
-          <button
-            class="btn amber-btn"
-            disabled={!affordable}
-            onClick={() => {
-              lastTerms = { rate: counter.rate, weeks };
-              onLend(counter.rate, weeks, counter.collateral);
-            }}
-          >
-            {ui.portfolio.takeCounter(percent(counter.rate))}
-          </button>
-        </div>
-      )}
-
-      <div class="row">
-        <button
-          class="btn primary grow-btn"
-          disabled={!affordable}
-          onClick={() => {
-            lastTerms = { rate, weeks };
-            onLend(rate, weeks, collateral);
-          }}
-        >
-          {affordable ? ui.portfolio.lend : ui.portfolio.noCash}
-        </button>
-        <button class="btn grow-btn" onClick={onRefuse}>
-          {ui.portfolio.refuse}
-        </button>
-      </div>
-    </article>
   );
 }
 

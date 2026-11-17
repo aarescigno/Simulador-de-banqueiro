@@ -156,7 +156,7 @@ describe('migração 7 → 8', () => {
     delete v7.esc;
     delete v7.stats.sold;
     const m = deserialize(JSON.stringify(v7));
-    expect(m.saveVersion).toBe(8);
+    expect(m.saveVersion).toBe(SAVE_VERSION);
     expect(m.tier).toBe(1);
     expect(m.laundering).toBeNull();
     expect(m.esc).toBeNull();
@@ -165,5 +165,40 @@ describe('migração 7 → 8', () => {
     for (let i = 0; i < 3; i++) {
       expect(() => (t = step(t).state)).not.toThrow();
     }
+  });
+});
+
+describe('migração 8 → 9', () => {
+  const asV8 = (s: unknown) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- save antigo, sem tipo
+    const v8 = JSON.parse(serialize(s as never)) as Record<string, any>;
+    v8.saveVersion = 8;
+    delete v8.policy.escCollection;
+    delete v8.stats.distributed;
+    return v8;
+  };
+  it('no degrau 1, só ganha os campos', () => {
+    const s = playBot(newGame(7), 3, { monthlyRate: 20, weeks: 8 });
+    const m = deserialize(JSON.stringify(asV8(s)));
+    expect(m.saveVersion).toBe(SAVE_VERSION);
+    expect(m.policy.escCollection).toEqual({ aviso: 1, serasa: 2, execucao: 4 });
+    expect(m.stats.distributed).toBe(0);
+    expect(m.tier).toBe(1);
+    expect(m.requests).toEqual(s.requests);
+  });
+  it('no degrau 2, entra na ESC de verdade: fichas geradas e o step roda', () => {
+    let s = playBot(newGame(7), 70, { monthlyRate: 20, weeks: 8, esc: 'consultoria' });
+    expect(s.tier).toBe(2);
+    const v8 = asV8(s);
+    v8.requests = [];
+    v8.fear = 55;
+    v8.queue = [];
+    s = deserialize(JSON.stringify(v8));
+    expect(s.fear).toBe(0);
+    expect(s.word).toBe(30);
+    expect(s.requests.length).toBeGreaterThanOrEqual(1);
+    expect(s.requests.every((r) => r.company)).toBe(true);
+    expect(s.queue.some((q) => q.event.type === 'escOpened')).toBe(true);
+    for (let i = 0; i < 3; i++) expect(() => (s = step(s).state)).not.toThrow();
   });
 });

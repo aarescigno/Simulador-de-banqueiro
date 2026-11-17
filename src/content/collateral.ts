@@ -13,4 +13,20 @@ export const collateralText: Record<
     seized: 'O banco bloqueou o cartão do INSS',
     perMonth: true,
   },
+  veiculo: {
+    label: 'Veículo',
+    noun: 'o veículo, em alienação fiduciária',
+    seized: 'Veículo retomado e leiloado',
+  },
+  equipamento: {
+    label: 'Equipamento',
+    noun: 'o equipamento',
+    seized: 'Equipamento retomado e leiloado',
+  },
+  recebiveis: {
+    label: 'Recebíveis do cartão',
+    noun: 'os recebíveis do cartão',
+    seized: 'A maquininha parou de pagar',
+    perMonth: true,
+  },
 };

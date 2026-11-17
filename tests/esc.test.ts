@@ -290,7 +290,7 @@ describe('openEsc', () => {
     expect(s.cash).toBe(25_000);
     expect(s.tier).toBe(2);
     expect(s.laundering).toBeNull();
-    expect(s.requests).toEqual([]);
+    expect(s.requests.length).toBeGreaterThanOrEqual(1);
     expect(s.esc).toEqual({
       openedWeek: 30,
       capital: 25_000,
@@ -326,14 +326,14 @@ describe('openEsc', () => {
     expect(() => openEsc(d)).toThrow();
     expect(escOpenBlock(ready())).toBeNull();
   });
-  it('depois, step e decide lançam erro', () => {
+  it('depois, o step roda e o caderninho não decide mais', () => {
     const s = decide(ready(), { type: 'openEsc' });
     expect(s.tier).toBe(2);
-    expect(() => step(s)).toThrow('A ESC abre numa próxima versão.');
-    expect(() => decide(s, { type: 'refuse', requestId: 1 })).toThrow(
-      'A ESC abre numa próxima versão.',
+    expect(() => step(s)).not.toThrow();
+    expect(advanceWeeks(s, 3).week).toBe(s.week + 3);
+    expect(() => decide(s, { type: 'launder', route: 'consultoria' })).toThrow(
+      'Isso é do caderninho.',
     );
-    expect(advanceWeeks(s, 3)).toBe(s);
   });
 });
 

@@ -128,9 +128,8 @@ export function escLine(e: GameEvent): string | null {
   }
 }
 
-/** Tela "em breve" do degrau 2. */
+/** Textos de abertura da ESC e da ficha do caderninho. */
 export const screen = {
-  title: 'ESC aberta',
   opening: (week: number) =>
     `Semana ${week}. CNPJ ativo, capital declarado de ${K()}. A junta comercial não perguntou de onde veio.`,
   origin: (route: LaunderRoute, l: Laranja): string =>
@@ -148,7 +147,6 @@ export const screen = {
         ? `O caderninho foi vendido a um colega do ramo por ${v}. Um devedor mudou de credor sem ser avisado.`
         : `O caderninho foi vendido a um colega do ramo por ${v}. ${n} devedores mudaram de credor sem ser avisados.`,
   leftover: (v: string) => `Sobrou ${v} do caixa antigo. Foi para o seu nome.`,
-  fichaTitle: 'Ficha',
   ficha: {
     weeks: 'Semanas de caderninho',
     complaints: 'Denúncias',
@@ -169,9 +167,4 @@ export const screen = {
     refused: 'Recusada',
     refusedTwice: 'Recusada duas vezes',
   } as Record<MilitiaState, string>,
-  cash: 'Caixa da ESC',
-  protected: 'Bolso protegido',
-  soon: 'A ESC abre na próxima versão. Esta partida fica salva até lá.',
-  newGame: 'Nova partida',
-  confirmNew: 'Começar outra partida apaga esta, com ESC e tudo. Continuar?',
 };

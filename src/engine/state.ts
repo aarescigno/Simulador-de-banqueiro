@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 export interface Debtor {
   /** Nome completo, para a ficha. */
@@ -15,11 +15,42 @@ export type Level = 'conversa' | 'pressao' | 'primo';
 /** Por nível, a partir de qual semana de atraso (1 a 5) ele vale; null = nunca. */
 export type CollectionPolicy = Record<Level, number | null>;
 
+/** Passo de cobrança da ESC, do mais brando ao mais pesado. */
+export type EscLevel = 'aviso' | 'serasa' | 'execucao';
+
+/** Por passo, a partir de qual semana de atraso (1 a 5) ele vale; null = nunca. */
+export type EscCollectionPolicy = Record<EscLevel, number | null>;
+
 export interface Policy {
   collection: CollectionPolicy;
+  /** Cobrança do degrau 2. */
+  escCollection: EscCollectionPolicy;
 }
 
-export type CollateralKind = 'celular' | 'moto' | 'inss';
+export type CollateralKind =
+  | 'celular'
+  | 'moto'
+  | 'inss'
+  | 'veiculo'
+  | 'equipamento'
+  | 'recebiveis';
+
+export type Porte = 'mei' | 'micro' | 'pequena';
+export type CityKind = 'sede' | 'vizinho';
+
+/** A empresa da ficha do degrau 2. */
+export interface Company {
+  /** Nome fantasia. */
+  name: string;
+  segment: string;
+  porte: Porte;
+  city: string;
+  cityKind: CityKind;
+  /** Faturamento mensal, em reais. */
+  revenue: number;
+  years: number;
+  serasa: boolean;
+}
 
 export interface Collateral {
   kind: CollateralKind;
@@ -48,6 +79,8 @@ export interface LoanRequest {
   /** Oculto: quantas contrapropostas ainda faz antes de ir embora. */
   patience: number;
   counter?: Counter;
+  /** Degrau 2: a empresa que pede; o dono fica em `debtor`. */
+  company?: Company;
 }
 
 export interface Loan {
@@ -77,6 +110,10 @@ export interface Loan {
   lastLevel: Level | null;
   status: 'active' | 'paid' | 'defaulted' | 'forgiven' | 'lost' | 'sold';
   endWeek?: number;
+  /** Degrau 2: a empresa devedora. */
+  company?: Company;
+  /** Degrau 2: passo de cobrança aplicado na última semana de atraso. */
+  escLevel?: EscLevel | null;
 }
 
 /** Faixa da atenção policial; o número exato fica oculto. */
@@ -267,8 +304,14 @@ export type GameEvent =
   | { type: 'refused'; name: string }
   | { type: 'walkedOut'; name: string }
   | { type: 'expired'; name: string }
-  | { type: 'paid'; name: string; amount: number; level?: Level | null }
-  | { type: 'missed'; name: string; streak: number; level?: Level | null }
+  | { type: 'paid'; name: string; amount: number; level?: Level | null; escLevel?: EscLevel | null }
+  | {
+      type: 'missed';
+      name: string;
+      streak: number;
+      level?: Level | null;
+      escLevel?: EscLevel | null;
+    }
   | { type: 'forgiven'; name: string; amount: number }
   | { type: 'complaint'; source: ComplaintSource; name?: string }
   | { type: 'heatRose'; band: HeatBand }
@@ -298,6 +341,16 @@ export type GameEvent =
   | { type: 'laundered'; route: LaunderRoute; cost: number; who: string }
   | { type: 'escReady'; route: LaunderRoute }
   | { type: 'fachadaCaught'; amount: number }
+  | { type: 'escOpened'; route: LaunderRoute; capital: number; who: string }
+  | {
+      type: 'executed';
+      name: string;
+      recovered: number;
+      writtenOff: number;
+      collateral: CollateralKind | null;
+    }
+  | { type: 'distributed'; to: Compartment; amount: number; fee: number; who: string }
+  | { type: 'capitalized'; amount: number; capital: number }
   | { type: 'mesadaFailed' }
   | { type: 'militiaCut'; amount: number }
   | {
@@ -345,6 +398,8 @@ export interface Stats {
   returned: number;
   /** Recebido com a venda do caderninho ao abrir a ESC. */
   sold: number;
+  /** Lucro da ESC levado para o bolso. */
+  distributed: number;
 }
 
 export interface GameState {

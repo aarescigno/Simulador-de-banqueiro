@@ -51,6 +51,7 @@ function seqRng(...values: number[]): Rng {
 
 const policy = (c: Partial<CollectionPolicy>) => ({
   collection: { conversa: 1, pressao: 2, primo: 4, ...c },
+  escCollection: { aviso: 1, serasa: 2, execucao: 4 },
 });
 
 describe('levelFor', () => {

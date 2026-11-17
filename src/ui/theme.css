@@ -402,6 +402,15 @@ input[type='range'] {
   border-color: var(--amber);
   color: var(--amber);
 }
+.chip.static {
+  cursor: default;
+  min-height: 0;
+  padding: 3px 10px;
+  font-size: 12px;
+}
+.chip.static.amber {
+  border-color: var(--amber);
+}
 .loan {
   display: flex;
   flex-direction: column;

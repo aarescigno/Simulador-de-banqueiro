@@ -1,4 +1,4 @@
-import { collection, params } from '../content/params';
+import { collection, escLoans, params, police as policeParams } from '../content/params';
 import {
   canAccept,
   clampMeter,
@@ -12,6 +12,17 @@ import {
 } from './agiota';
 import { retire, tickCrisis } from './crisis';
 import { launder, openEsc, tickEsc } from './esc';
+import {
+  capitalize,
+  collectEsc,
+  distribute,
+  escCanAccept,
+  escHeadroom,
+  escValidTerms,
+  execute,
+  generateEscRequests,
+  requestName,
+} from './escLoans';
 import { emptyIncidents } from './incidents';
 import { emptyPocket, stash, tickPocket, unstash } from './pocket';
 import { applyChoice, resolveDefaults, tickIncidents } from './incidents';
@@ -21,6 +32,7 @@ import {
   SAVE_VERSION,
   type CollectionPolicy,
   type Compartment,
+  type EscCollectionPolicy,
   type DilemmaOption,
   type GameEvent,
   type GameState,
@@ -39,9 +51,23 @@ export type Decision =
   | { type: 'unstash'; from: Compartment; amount: number }
   | { type: 'launder'; route: LaunderRoute }
   | { type: 'openEsc' }
-  | { type: 'retire' };
+  | { type: 'retire' }
+  | { type: 'setEscPolicy'; collection: EscCollectionPolicy }
+  | { type: 'execute'; loanId: number }
+  | { type: 'distribute'; to: Compartment; amount: number }
+  | { type: 'capitalize'; amount: number };
 
-const ESC_SOON = 'A ESC abre numa próxima versão.';
+/** Decisões que só existem no caderninho (degrau 1) e as que só existem na ESC (degrau 2). */
+const TIER1_ONLY: Decision['type'][] = [
+  'setPolicy',
+  'setOverride',
+  'forgive',
+  'stash',
+  'unstash',
+  'launder',
+  'openEsc',
+];
+const TIER2_ONLY: Decision['type'][] = ['setEscPolicy', 'execute', 'distribute', 'capitalize'];
 
 export interface StepResult {
   state: GameState;
@@ -71,8 +97,12 @@ export function newGame(seed: number): GameState {
       spent: 0,
       returned: 0,
       sold: 0,
+      distributed: 0,
     },
-    policy: { collection: { ...collection.defaultPolicy } },
+    policy: {
+      collection: { ...collection.defaultPolicy },
+      escCollection: { ...escLoans.collection.defaultPolicy },
+    },
     fear: 0,
     word: collection.word.start,
     complaints: 0,
@@ -103,7 +133,15 @@ export function newGame(seed: number): GameState {
  */
 export function decide(prev: GameState, d: Decision): GameState {
   if (prev.ended) throw new Error('A partida acabou.');
-  if (prev.tier === 2) throw new Error(ESC_SOON);
+  if (prev.tier === 2 && TIER1_ONLY.includes(d.type)) throw new Error('Isso é do caderninho.');
+  if (prev.tier === 1 && TIER2_ONLY.includes(d.type)) throw new Error('Isso é da ESC.');
+  if (d.type === 'setEscPolicy' || d.type === 'execute') return decideEscCollection(prev, d);
+  if (d.type === 'distribute' || d.type === 'capitalize') {
+    const state = structuredClone(prev);
+    const event =
+      d.type === 'distribute' ? distribute(state, d.to, d.amount) : capitalize(state, d.amount);
+    return schedule(state, state.week, event);
+  }
   if (d.type === 'launder') {
     const state = structuredClone(prev);
     return schedule(state, state.week, launder(state, d.route));
@@ -137,11 +175,19 @@ export function decide(prev: GameState, d: Decision): GameState {
   const state: GameState = structuredClone(prev);
   const pending = state.requests;
   state.requests = pending.filter((r) => r.id !== d.requestId);
+  const esc = prev.tier === 2;
+  const name = requestName(req);
   if (d.type === 'refuse') {
-    return schedule(state, state.week, { type: 'refused', name: req.debtor.short });
+    return schedule(state, state.week, { type: 'refused', name });
   }
-  if (!canAccept(prev, d.requestId)) throw new Error('Caixa insuficiente.');
-  if (!validTerms(d)) throw new Error('Taxa ou prazo fora dos limites.');
+  if (esc) {
+    if (req.amount > escHeadroom(prev)) throw new Error('Passa do limite de capital.');
+    if (!escCanAccept(prev, d.requestId)) throw new Error('Caixa insuficiente.');
+    if (!escValidTerms(d)) throw new Error('Taxa ou prazo fora dos limites.');
+  } else {
+    if (!canAccept(prev, d.requestId)) throw new Error('Caixa insuficiente.');
+    if (!validTerms(d)) throw new Error('Taxa ou prazo fora dos limites.');
+  }
   const collateral = d.collateral ?? null;
   if (collateral && !req.assets.some((a) => a.kind === collateral)) {
     throw new Error('O devedor não tem essa garantia.');
@@ -150,7 +196,7 @@ export function decide(prev: GameState, d: Decision): GameState {
   const max = tolerance(req, collateral);
   if (d.monthlyRate > max) {
     if (req.patience <= 0) {
-      return schedule(state, state.week, { type: 'walkedOut', name: req.debtor.short });
+      return schedule(state, state.week, { type: 'walkedOut', name });
     }
     const countered = { ...req, patience: req.patience - 1, counter: { rate: max, collateral } };
     state.requests = pending.map((r) => (r.id === req.id ? structuredClone(countered) : r));
@@ -163,19 +209,42 @@ export function decide(prev: GameState, d: Decision): GameState {
   state.stats.lent += req.amount;
   state.word = clampMeter(
     state.word +
-      collection.word.loanMade +
+      (esc ? escLoans.word.loanMade : collection.word.loanMade) +
       (collateral === 'inss' ? collection.inss.wordOnLend : 0),
   );
   return schedule(state, state.week, {
     type: 'loanMade',
-    name: req.debtor.short,
+    name,
     amount: req.amount,
     ...terms,
   });
 }
 
-function validThreshold(t: number | null): boolean {
-  return t === null || (Number.isInteger(t) && t >= 1 && t <= collection.maxThreshold);
+function validThreshold(t: number | null, max = collection.maxThreshold): boolean {
+  return t === null || (Number.isInteger(t) && t >= 1 && t <= max);
+}
+
+/** Decisões de cobrança da ESC, aplicadas na hora. */
+function decideEscCollection(
+  prev: GameState,
+  d: Extract<Decision, { type: 'setEscPolicy' | 'execute' }>,
+): GameState {
+  const state = structuredClone(prev);
+  if (d.type === 'setEscPolicy') {
+    const c = d.collection;
+    const max = escLoans.collection.maxThreshold;
+    if (![c.aviso, c.serasa, c.execucao].every((t) => validThreshold(t, max))) {
+      throw new Error('Limiar de cobrança inválido.');
+    }
+    state.policy = { ...state.policy, escCollection: { ...c } };
+    return state;
+  }
+  const loan = state.loans.find((l) => l.id === d.loanId);
+  if (!loan || loan.status !== 'active') throw new Error('Esse empréstimo não está ativo.');
+  if (loan.missedStreak < 1) throw new Error('Só dá para executar quem está em atraso.');
+  const events: GameEvent[] = [];
+  execute(state, loan, events);
+  return schedule(state, state.week, events[0]!);
 }
 
 /** Decisões sobre cobrança, aplicadas na hora. */
@@ -186,10 +255,10 @@ function decideCollection(
   const state = structuredClone(prev);
   if (d.type === 'setPolicy') {
     const c = d.collection;
-    if (![c.conversa, c.pressao, c.primo].every(validThreshold)) {
+    if (![c.conversa, c.pressao, c.primo].every((t) => validThreshold(t))) {
       throw new Error('Limiar de cobrança inválido.');
     }
-    state.policy = { collection: { ...c } };
+    state.policy = { ...state.policy, collection: { ...c } };
     return state;
   }
   if (d.type === 'setOverride') {
@@ -214,12 +283,12 @@ export function step(
   rng: Rng = createRng(prev.rngState),
 ): StepResult {
   if (prev.ended) throw new Error('A partida acabou.');
-  if (prev.tier === 2) throw new Error(ESC_SOON);
   let state = prev;
   for (const d of decisions) state = decide(state, d);
   state = structuredClone(state);
   if (state.ended) return { state, events: [] };
   const events: GameEvent[] = [];
+  if (state.tier === 2) return stepEsc(state, events, rng);
 
   const bandBefore = heatBand(state.police.heat);
   // Dilema sem resposta: vale a opção padrão de cada um.
@@ -266,6 +335,43 @@ export function step(
   return { state, events };
 }
 
+/**
+ * Fecha a semana no degrau 2: sem medo, ocorrências, inquérito nem crise. A polícia só esfria.
+ * Recebe uma cópia do estado e a muta.
+ */
+function stepEsc(state: GameState, events: GameEvent[], rng: Rng): StepResult {
+  resolveDefaults(state, events);
+
+  const due = state.queue.filter((q) => q.week <= state.week);
+  state.queue = state.queue.filter((q) => q.week > state.week);
+  for (const q of due) events.push(q.event);
+
+  for (const req of state.requests) events.push({ type: 'expired', name: requestName(req) });
+  state.requests = [];
+
+  for (const loan of state.loans) collectEsc(state, loan, rng, events);
+
+  state.word = clampMeter(state.word + (escLoans.word.start - state.word) * escLoans.word.drift);
+  state.police.heat *= policeParams.decay;
+  tickPocket(state, rng, events);
+
+  state.journal.push({
+    week: state.week,
+    events,
+    cash: state.cash,
+    fear: state.fear,
+    word: state.word,
+    heat: state.police.heat,
+  });
+  if (state.journal.length > params.journalWeeks) {
+    state.journal.splice(0, state.journal.length - params.journalWeeks);
+  }
+  state.week += 1;
+  state.requests = generateEscRequests(state, rng);
+  state.rngState = rng.state();
+  return { state, events };
+}
+
 export function schedule(state: GameState, week: number, event: GameEvent): GameState {
   const queue = [...state.queue, { week, event }].sort((a, b) => a.week - b.week);
   return { ...state, queue };
@@ -281,7 +387,7 @@ export function devGiveMoney(state: GameState, amount: number): GameState {
 /** Avança semanas sem responder pedidos (eles expiram). */
 export function advanceWeeks(state: GameState, weeks: number): GameState {
   let s = state;
-  for (let i = 0; i < weeks && !s.ended && s.tier === 1; i++) s = step(s).state;
+  for (let i = 0; i < weeks && !s.ended; i++) s = step(s).state;
   return s;
 }
 

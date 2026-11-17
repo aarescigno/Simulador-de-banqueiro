@@ -1,5 +1,12 @@
 // Relatório rápido de balanço: npx vite-node sim/balance.ts (COLLATERAL=1 para exigir garantia)
-import { newGame, protectedWealth, type Compartment, type DilemmaOption } from '../src/engine';
+import {
+  newGame,
+  openEsc,
+  protectedWealth,
+  type Compartment,
+  type DilemmaOption,
+  type GameState,
+} from '../src/engine';
 import { allIncidents, drawable } from '../src/engine';
 import { incidents as incidentParams } from '../src/content/params';
 import { playBot, policies } from './bot';
@@ -28,6 +35,12 @@ if (incMode === '0') incidentParams.chance = 0;
 const incidents = (incMode === '0' ? 'padrao' : incMode) as 'padrao' | 'paga' | 'recusa';
 /** ESC=consultoria|fachada|laranja|devagar: o bot abre a ESC por esta rota. Padrão: nenhuma. */
 const esc = (process.env.ESC || null) as LaunderRoute | null;
+/** ESC_RATE, ESC_TERM: taxa e prazo da ESC. ESC_MODE=distribui|capitaliza. ESC_POL=padrao|semexec|cedo. ESC_GAR=0: sem garantia. */
+const escRate = Number(process.env.ESC_RATE ?? 8);
+const escTerm = Number(process.env.ESC_TERM ?? 12);
+const escMode = (process.env.ESC_MODE ?? 'distribui') as 'distribui' | 'capitaliza';
+const escPol = (process.env.ESC_POL ?? 'padrao') as 'padrao' | 'semexec' | 'cedo';
+const escGar = process.env.ESC_GAR !== '0';
 const policyNames = (process.env.POLICY ?? 'padrao').split(',');
 for (const policyName of policyNames) {
   for (const monthlyRate of (process.env.RATES ?? '5,10,20,30,50,80').split(',').map(Number)) {
@@ -52,9 +65,17 @@ for (const policyName of policyNames) {
       let opened = 0;
       let caught = 0;
       const openWeeks: number[] = [];
+      let escLoansN = 0;
+      let escDefaults = 0;
+      let executions = 0;
+      const distributed: number[] = [];
+      const capitals: number[] = [];
       const seen = new Set<string>();
       for (let seed = 1; seed <= RUNS; seed++) {
-        const s = playBot(newGame(seed), WEEKS, {
+        // Regressão: as colunas do degrau 1 saem do estado no instante em que a ESC abria antes do
+        // degrau 2 existir (sem o `enterEsc`); as da ESC saem da partida inteira.
+        const snap: { pre: GameState | null } = { pre: null };
+        const full = playBot(newGame(seed), WEEKS, {
           monthlyRate,
           weeks,
           collateral,
@@ -64,7 +85,31 @@ for (const policyName of policyNames) {
           crisis,
           pocket,
           esc,
+          onEscOpen: (b) => {
+            snap.pre ??= structuredClone(b);
+          },
+          escRate,
+          escWeeks: escTerm,
+          escMode,
+          escPolicy: escPol,
+          escCollateral: escGar,
         });
+        let s = full;
+        if (snap.pre) {
+          openEsc(snap.pre, false);
+          s = snap.pre;
+        }
+        if (full.tier === 2) {
+          distributed.push(full.stats.distributed);
+          capitals.push(full.esc!.capital);
+          const mine = full.loans.filter((l) => l.company);
+          const closedEsc = mine.filter((l) => l.startWeek <= WEEKS - escTerm - 6);
+          escLoansN += closedEsc.length;
+          escDefaults += closedEsc.filter((l) => l.status === 'defaulted').length;
+          executions += full.journal
+            .flatMap((r) => r.events)
+            .filter((e) => e.type === 'executed').length;
+        }
         fear += s.fear;
         word += s.word;
         complaints += s.complaints;
@@ -111,7 +156,8 @@ for (const policyName of policyNames) {
           `protegido ${Math.round(kept / RUNS)} | bloqueado ${Math.round(blocked / RUNS)} | ` +
           `ocorrências ${(occurrences / RUNS).toFixed(1)} | distintas ${drawable.filter((id) => seen.has(id)).length}/${drawable.length} (${allIncidents.filter((id) => seen.has(id)).length}/${allIncidents.length}) | tragédia ${((100 * tragedies) / RUNS).toFixed(0)}% | crise ${((100 * crises) / RUNS).toFixed(0)}% | preso ${((100 * jailed) / RUNS).toFixed(0)}% | morto ${((100 * dead) / RUNS).toFixed(0)}% | exilado ${((100 * exiled) / RUNS).toFixed(0)}%` +
           (esc
-            ? ` | ESC ${esc} ${((100 * opened) / RUNS).toFixed(0)}% | sem. ESC ${median(openWeeks)} | fachada pega ${((100 * caught) / RUNS).toFixed(0)}%`
+            ? ` | ESC ${esc} ${((100 * opened) / RUNS).toFixed(0)}% | sem. ESC ${median(openWeeks)} | fachada pega ${((100 * caught) / RUNS).toFixed(0)}%` +
+              ` | ESC calote ${escLoansN ? ((100 * escDefaults) / escLoansN).toFixed(1) : '-'}% | distribuído ${median(distributed)} | capital ${median(capitals)} | execuções ${opened ? (executions / opened).toFixed(1) : '-'}`
             : ''),
       );
     }
