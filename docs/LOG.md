@@ -6,6 +6,26 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-17 · Marco 1b, item 2 · Plano do ciclo da ESC (sem código)
+
+**Feito**
+- Plano fechado do item 2 no briefing (`PROXIMA-SESSAO.md`), no formato do plano do item 1: regras, parâmetros, tipos, arquivos, textos, testes, alvos do `sim` e critério de pronto.
+- O item foi dividido em duas entregas jogáveis, e o `ROADMAP.md` ganhou as duas linhas: **2a**, o ciclo da ESC (fichas de empresas, garantias formais, cobrança em aviso/Serasa/execução, limite de capital, distribuir e capitalizar o lucro), e **2b**, as regras que dá para quebrar (pessoa física, média empresa, fora da área, fios soltos).
+- Protótipo em Python do ciclo do degrau 2 (fora do repositório) para fechar os números. Com 300 sementes e 30 semanas de ESC a partir de R$ 25 mil: 8% a.m. e 12 semanas dão calote de 11% e R$ 13,2 mil distribuídos; de 12% para cima o lucro estabiliza, porque a contraproposta segura a taxa; capitalizando, o capital vai a R$ 41,6 mil.
+
+**Decisões**
+- Ao abrir a ESC, o passado fica na periferia: milícia, mesada, rival e ocorrências acabam, a polícia só esfria, o medo zera e o bolso segue (desbloqueio, laranja e doleiro continuam). O bolso não volta para a ESC; aporte do bolso fica para as cartas (item 4) e a crise (item 5).
+- O limite de capital é duro: o total na rua (principal amortizado proporcionalmente) não passa do capital declarado. O lucro acima do capital pode ser distribuído (placar) ou capitalizado (limite maior, sem volta).
+- Cobrança formal: o calote sem execução não recupera nada; a execução retoma a garantia (ou penhora 10%), e o advogado fica com 20%.
+- Lei conferida (LC 167/2019): área = município da sede e vizinhos; só juros, tarifa proibida; sem Lei da Usura; captação proibida; o art. 9 faz do descumprimento do objeto um crime (1 a 4 anos), o que vai para a nota do 2b.
+
+**Próximo passo**
+- Executar o 2a com o Sonnet, seguindo o briefing.
+
+**Modelo:** Opus, esforço alto, para o plano (regras e números novos do degrau 2).
+
+---
+
 ## 2026-11-14 · Extra (fora do roadmap) · Polimento visual: movimento, brilho e desenhos
 
 **Feito**
