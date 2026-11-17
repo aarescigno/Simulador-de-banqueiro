@@ -199,7 +199,7 @@ export function Stat({
   );
 }
 
-function Meter({
+export function Meter({
   label,
   text,
   value,

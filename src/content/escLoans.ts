@@ -39,7 +39,6 @@ export const escUi = {
       Exclude<EscLevel, 'execucao'>,
       string
     >,
-    executedStatus: (lost: string) => `Executado · baixado ${lost}`,
   },
   policies: {
     title: 'Políticas',

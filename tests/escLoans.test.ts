@@ -38,7 +38,7 @@ const ALWAYS = fixedRng(0);
 
 /** Partida já no degrau 2 (consultoria), semana 30, sem empréstimos. */
 function tier2(seed = 1, route: LaunderRoute = 'consultoria'): GameState {
-  let s = { ...newGame(seed), week: 24, requests: [], loans: [], cash: 40_000 };
+  let s: GameState = { ...newGame(seed), week: 24, requests: [], loans: [], cash: 40_000 };
   s = decide(s, { type: 'launder', route });
   s.week = 30;
   s.laundering!.readyWeek = 30;
@@ -86,7 +86,7 @@ function loan(over: Partial<Loan> = {}): Loan {
 
 describe('openEsc', () => {
   it('entra no degrau 2 com fichas, sem mexer no rngState e com o evento na fila', () => {
-    let s = { ...newGame(5), week: 24, requests: [], loans: [], cash: 40_000 };
+    let s: GameState = { ...newGame(5), week: 24, requests: [], loans: [], cash: 40_000 };
     s = decide(s, { type: 'launder', route: 'consultoria' });
     s.week = 30;
     s.laundering!.readyWeek = 30;

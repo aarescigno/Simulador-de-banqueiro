@@ -79,46 +79,50 @@ export function DevPanel({ state, update, onNewGame, onClose }: Props) {
               </button>
             </div>
 
-            <label class="small dim">{ui.dev.forceIncident}</label>
-            <div class="row">
-              <select
-                class="field grow"
-                value={incident}
-                onChange={(e) => setIncident(e.currentTarget.value)}
-              >
-                {allIncidents.map((id) => (
-                  <option key={id} value={id}>
-                    {incidentNames[id]}
-                  </option>
-                ))}
-              </select>
-              <button
-                class="btn"
-                onClick={() => {
-                  try {
-                    update(devForceIncident(state, incident as (typeof allIncidents)[number]));
-                    setForceError('');
-                  } catch (e) {
-                    setForceError(e instanceof Error ? e.message : String(e));
-                  }
-                }}
-              >
-                {ui.dev.force}
-              </button>
-            </div>
-            <button
-              class="btn"
-              onClick={() => {
-                try {
-                  update(devForceTrial(state));
-                  setForceError('');
-                } catch (e) {
-                  setForceError(e instanceof Error ? e.message : String(e));
-                }
-              }}
-            >
-              {ui.dev.forceTrial}
-            </button>
+            {state.tier === 1 && (
+              <>
+                <label class="small dim">{ui.dev.forceIncident}</label>
+                <div class="row">
+                  <select
+                    class="field grow"
+                    value={incident}
+                    onChange={(e) => setIncident(e.currentTarget.value)}
+                  >
+                    {allIncidents.map((id) => (
+                      <option key={id} value={id}>
+                        {incidentNames[id]}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    class="btn"
+                    onClick={() => {
+                      try {
+                        update(devForceIncident(state, incident as (typeof allIncidents)[number]));
+                        setForceError('');
+                      } catch (e) {
+                        setForceError(e instanceof Error ? e.message : String(e));
+                      }
+                    }}
+                  >
+                    {ui.dev.force}
+                  </button>
+                </div>
+                <button
+                  class="btn"
+                  onClick={() => {
+                    try {
+                      update(devForceTrial(state));
+                      setForceError('');
+                    } catch (e) {
+                      setForceError(e instanceof Error ? e.message : String(e));
+                    }
+                  }}
+                >
+                  {ui.dev.forceTrial}
+                </button>
+              </>
+            )}
             {forceError && <p class="small red">{forceError}</p>}
 
             <h3>{ui.dev.hidden}</h3>
