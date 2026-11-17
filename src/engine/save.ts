@@ -1,4 +1,5 @@
-import { collection } from '../content/params';
+import { collection, escLoans } from '../content/params';
+import { enterEsc } from './escLoans';
 import { emptyIncidents } from './incidents';
 import { SAVE_VERSION, type GameState } from './state';
 
@@ -63,6 +64,19 @@ const migrations: Record<number, Migration> = {
     esc: null,
     stats: { ...(old.stats as Obj), sold: 0 },
   }),
+  // 8 → 9: cobrança e lucro da ESC. Quem já estava no degrau 2 entra nele de verdade.
+  8: (old) => {
+    const next: Obj = {
+      ...old,
+      policy: {
+        ...(old.policy as Obj),
+        escCollection: { ...escLoans.collection.defaultPolicy },
+      },
+      stats: { ...(old.stats as Obj), distributed: 0 },
+    };
+    if (next.tier === 2) enterEsc(next as unknown as GameState);
+    return next;
+  },
 };
 
 export class SaveError extends Error {}

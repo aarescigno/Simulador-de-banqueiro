@@ -3,6 +3,7 @@ import type { ComplaintSource, GameEvent, HeatBand, Level, WeekReport } from '..
 import { collateralText } from './collateral';
 import { crisisLine } from './endings';
 import { escLine } from './esc';
+import { escLines } from './escLoans';
 import { dilemmaTexts, newsTexts, continuing } from './incidents';
 import { money, percent } from './format';
 import { params } from './params';
@@ -59,7 +60,7 @@ export function reportLines(r: WeekReport): string[] {
 
   const paid = ofType(ev, 'paid');
   for (const level of levels) {
-    const group = paid.filter((e) => (e.level ?? null) === level);
+    const group = paid.filter((e) => !e.escLevel && (e.level ?? null) === level);
     if (!group.length) continue;
     const total = group.reduce((s, e) => s + e.amount, 0);
     const verb = group.length === 1 ? 'pagou' : 'pagaram';
@@ -70,12 +71,14 @@ export function reportLines(r: WeekReport): string[] {
 
   const missed = ofType(ev, 'missed');
   for (const level of levels) {
-    const group = missed.filter((e) => (e.level ?? null) === level);
+    const group = missed.filter((e) => !e.escLevel && (e.level ?? null) === level);
     if (!group.length) continue;
     const verb = group.length === 1 ? 'não pagou' : 'não pagaram';
     const quote = level && group.length === 1 ? ` ${missedQuote[level]}` : '';
     lines.push(`${joinNames(group.map((e) => e.name))} ${verb}.${quote}`);
   }
+
+  lines.push(...escLines(ev, r.week));
 
   for (const e of ofType(ev, 'settled')) {
     lines.push(`${e.name} quitou. Lucro: ${money(e.profit)}.`);

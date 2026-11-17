@@ -84,6 +84,11 @@ export const params = {
       brokePay: 0.7,
       value: [1_500, 2_800] as const,
     },
+    // Degrau 2: bens da empresa. Valores de veículo e equipamento; recebíveis = parte do faturamento.
+    veiculo: { ratePenalty: 5, payBonus: 0.05, recovery: 0.3, value: [8_000, 30_000] as const },
+    equipamento: { ratePenalty: 3, payBonus: 0.03, recovery: 0.2, value: [3_000, 20_000] as const },
+    /** Recebíveis do cartão: a maquininha paga mesmo com a empresa quebrada; no calote, só penhora. */
+    recebiveis: { ratePenalty: 4, payBonus: 0.1, recovery: 0, brokePay: 0.5, revenueShare: 0.5 },
   },
 };
 
@@ -382,4 +387,73 @@ export const esc = {
   laranja: { signing: 0.1, weeks: 1 },
   devagar: { perWeek: 1_500 },
   sale: { current: 0.4, late: 0.1 },
+};
+
+/** Degrau 2: fichas, termos, pagamento e cobrança da ESC. */
+export const escLoans = {
+  requests: {
+    perWeek: [1, 2] as const,
+    wordDivisor: 40,
+    maxTotal: 5,
+    baseRisk: [0.35, 0.2] as const,
+    riskClamp: [0.02, 0.95] as const,
+    serasaChance: 0.2,
+    serasaRisk: 0.15,
+    youngYears: 2,
+    youngRisk: 0.08,
+    years: [0, 12] as const,
+    /** Pedido grande para o faturamento: soma leverageRisk × max(0, valor/faturamento − leverageFree). */
+    leverageRisk: 0.2,
+    leverageFree: 0.5,
+    /** Chance de a ficha vir de um município vizinho. */
+    neighborChance: 0.25,
+  },
+  porte: {
+    mei: {
+      weight: 45,
+      risk: 0.05,
+      amount: [1_000, 3_500] as const,
+      revenue: [2_000, 6_500] as const,
+    },
+    micro: {
+      weight: 35,
+      risk: 0,
+      amount: [2_500, 8_000] as const,
+      revenue: [8_000, 30_000] as const,
+    },
+    pequena: {
+      weight: 20,
+      risk: -0.05,
+      amount: [6_000, 16_000] as const,
+      revenue: [30_000, 120_000] as const,
+    },
+  },
+  terms: {
+    rate: { min: 1, max: 30, step: 1, default: 6 },
+    weeks: { min: 4, max: 52, step: 1, default: 12 },
+  },
+  negotiation: { base: 3, riskWeight: 15, spread: 8, patience: [1, 2] as const },
+  payment: {
+    base: 0.97,
+    riskWeight: 0.3,
+    rateWeight: 0.8,
+    min: 0.05,
+    catchUp: 0.35,
+    hazardBase: 0.001,
+    hazardRisk: 0.012,
+    hazardRate: 1.5,
+    brokePay: 0.05,
+    defaultAfterWeeks: 6,
+  },
+  collection: {
+    maxThreshold: 5,
+    defaultPolicy: { aviso: 1, serasa: 2, execucao: 4 } as const,
+    levels: {
+      aviso: { payBonus: 0.06, brokePay: 0, word: 0 },
+      serasa: { payBonus: 0.12, brokePay: 0.03, word: -0.3 },
+    },
+    /** Execução: penhora sem garantia; o advogado e as custas ficam com 1 − net. */
+    execution: { penhora: 0.1, net: 0.8, word: -2 },
+  },
+  word: { start: 30, drift: 0.05, loanMade: 1, settled: 1, defaulted: -1 },
 };

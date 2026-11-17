@@ -77,6 +77,7 @@ export function makeLoan(state: GameState, req: LoanRequest, terms: LoanTerms): 
     override: null,
     lastLevel: null,
     status: 'active',
+    ...(req.company ? { company: { ...req.company }, escLevel: null } : {}),
   };
 }
 
@@ -136,6 +137,13 @@ export interface PayContext {
   shock?: number;
 }
 
+/** Chance de pagar depois de quebrar, com essa garantia (ou sem). */
+export function brokePayOf(kind: CollateralKind | undefined, fallback = params.payment.brokePay) {
+  if (!kind) return fallback;
+  const c = params.collateral[kind];
+  return 'brokePay' in c ? c.brokePay : fallback;
+}
+
 /** Chance de pagar a parcela nesta semana. */
 export function payChance(
   loan: Pick<Loan, 'risk' | 'monthlyRate' | 'broke'> & { collateral?: Collateral | null },
@@ -145,8 +153,7 @@ export function payChance(
   const kind = loan.collateral?.kind;
   const lv = level ? collection.levels[level] : null;
   if (loan.broke) {
-    const base = kind === 'inss' ? params.collateral.inss.brokePay : p.brokePay;
-    return Math.min(1, base + (lv?.brokePay ?? 0));
+    return Math.min(1, brokePayOf(kind) + (lv?.brokePay ?? 0));
   }
   const bonus = kind ? params.collateral[kind].payBonus : 0;
   return clamp(
@@ -229,10 +236,10 @@ export function collect(
     state.stats.writtenOff += writtenOff;
     events.push({ type: 'defaulted', name, writtenOff, recovered, collateral: c?.kind ?? null });
     if (c && c.kind !== 'inss') {
-      const cost = collection.seized[c.kind];
+      const cost = collection.seized[c.kind as 'celular' | 'moto'];
       state.fear = clampMeter(state.fear + cost.fear);
       state.word = clampMeter(state.word + cost.word);
-      complain(state, rng, events, cost.complaint, c.kind, name);
+      complain(state, rng, events, cost.complaint, c.kind as 'celular' | 'moto', name);
     }
   } else {
     events.push({ type: 'missed', name, streak: loan.missedStreak, level });

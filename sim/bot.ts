@@ -3,7 +3,10 @@
 import {
   canAccept,
   decide,
+  distributable,
+  escCanAccept,
   step,
+  type EscCollectionPolicy,
   type CollateralKind,
   type Compartment,
   type CollectionPolicy,
@@ -51,6 +54,17 @@ export interface BotOptions {
    * rota se ainda falta pouco e abre quando o capital fica limpo. Padrão: nenhuma.
    */
   esc?: LaunderRoute | null;
+  /** Chamada com o estado do degrau 1 um instante antes de abrir a ESC (o sim usa para a regressão). */
+  onEscOpen?: (before: GameState) => void;
+  /** Degrau 2: taxa (ESC_RATE) e prazo (ESC_TERM) dos empréstimos. Padrão: 8% e 12 semanas. */
+  escRate?: number;
+  escWeeks?: number;
+  /** Degrau 2: distribui o lucro todo semana (padrão) ou capitaliza tudo (ESC_MODE). */
+  escMode?: 'distribui' | 'capitaliza';
+  /** Degrau 2: política de cobrança (ESC_POL). Padrão: `padrao`. */
+  escPolicy?: 'padrao' | 'semexec' | 'cedo';
+  /** Degrau 2: exige garantia (ESC_GAR=0 desliga). Padrão: sim. */
+  escCollateral?: boolean;
 }
 
 /** Caixa que o bot mantém para emprestar; o resto vai para o bolso. */
@@ -65,6 +79,53 @@ export const policies: Record<string, CollectionPolicy> = {
 };
 
 const strongest: CollateralKind[] = ['inss', 'moto', 'celular'];
+const escStrongest: CollateralKind[] = ['veiculo', 'recebiveis', 'equipamento'];
+
+/** Políticas de cobrança da ESC do sim (ESC_POL=...). */
+export const escPolicies: Record<string, EscCollectionPolicy> = {
+  padrao: { aviso: 1, serasa: 2, execucao: 4 },
+  semexec: { aviso: 1, serasa: 2, execucao: null },
+  cedo: { aviso: 1, serasa: null, execucao: 2 },
+};
+
+/** Decisões do degrau 2: política uma vez, lucro para o bolso (ou capital), fichas que cabem. */
+function botDecideEsc(state: GameState, o: BotOptions): GameState {
+  let s = state;
+  const want = escPolicies[o.escPolicy ?? 'padrao']!;
+  const have = s.policy.escCollection;
+  if (want.aviso !== have.aviso || want.serasa !== have.serasa || want.execucao !== have.execucao) {
+    s = decide(s, { type: 'setEscPolicy', collection: want });
+  }
+  const free = distributable(s);
+  if (free > 0) {
+    if ((o.escMode ?? 'distribui') === 'capitaliza') {
+      s = decide(s, { type: 'capitalize', amount: free });
+    } else {
+      const to = o.pocket ?? 'own';
+      const min = to === 'offshore' ? pocket.offshore.min : 1;
+      if (free >= min) s = decide(s, { type: 'distribute', to, amount: free });
+    }
+  }
+  const rate = o.escRate ?? 8;
+  const weeks = o.escWeeks ?? 12;
+  for (const r of [...s.requests]) {
+    if (!escCanAccept(s, r.id)) {
+      s = decide(s, { type: 'refuse', requestId: r.id });
+      continue;
+    }
+    const collateral =
+      (o.escCollateral ?? true)
+        ? (escStrongest.find((k) => r.assets.some((a) => a.kind === k)) ?? null)
+        : null;
+    const terms = { monthlyRate: rate, weeks, collateral };
+    s = decide(s, { type: 'accept', requestId: r.id, ...terms });
+    const counter = s.requests.find((x) => x.id === r.id)?.counter;
+    if (counter && (o.takeCounter ?? true)) {
+      s = decide(s, { type: 'accept', requestId: r.id, ...terms, monthlyRate: counter.rate });
+    }
+  }
+  return s;
+}
 
 function inquiryOption(s: GameState, d: Dilemma, o: BotOptions): DilemmaOption {
   const want = o.inquiry ?? 'correr';
@@ -102,6 +163,7 @@ function incidentOption(s: GameState, d: Dilemma, o: BotOptions): DilemmaOption 
 
 /** Responde a todos os pedidos da semana. */
 export function botDecide(state: GameState, o: BotOptions): GameState {
+  if (state.tier === 2) return botDecideEsc(state, o);
   let s = state;
   if (o.pocket) {
     const excess = s.cash - POCKET_KEEP;
@@ -122,7 +184,10 @@ export function botDecide(state: GameState, o: BotOptions): GameState {
   if (s.ended) return s;
   let saving = false;
   if (o.esc) {
-    if (escOpenBlock(s) === null) return decide(s, { type: 'openEsc' });
+    if (escOpenBlock(s) === null) {
+      o.onEscOpen?.(s);
+      return botDecideEsc(decide(s, { type: 'openEsc' }), o);
+    }
     if (!s.laundering && escAvailable(s)) {
       const outlay = launderQuote(s, o.esc).outlay;
       if (o.esc === 'devagar' || outlay <= s.cash) s = decide(s, { type: 'launder', route: o.esc });
@@ -154,9 +219,9 @@ export function botDecide(state: GameState, o: BotOptions): GameState {
 export function playBot(start: GameState, weeks: number, o: BotOptions): GameState {
   let s = start;
   if (o.policy) s = decide(s, { type: 'setPolicy', collection: o.policy });
-  for (let i = 0; i < weeks && !s.ended && s.tier === 1; i++) {
+  for (let i = 0; i < weeks && !s.ended; i++) {
     s = botDecide(s, o);
-    if (!s.ended && s.tier === 1) s = step(s).state;
+    if (!s.ended) s = step(s).state;
   }
   return s;
 }
