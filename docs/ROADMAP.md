@@ -46,7 +46,7 @@ Objetivo: provar que o jogo é divertido antes de construir o resto.
 
 **1b. Transição e ESC**
 - [x] Dilema da lavagem para abrir a ESC (fachada, laranja, consultoria, devagar).
-- [ ] Ciclo da ESC: fichas de pequenas empresas, cobrança formal, limite de capital, distribuir e capitalizar (2a).
+- [x] Ciclo da ESC: fichas de pequenas empresas, cobrança formal, limite de capital, distribuir e capitalizar (2a).
 - [ ] Regras da ESC que dá para quebrar (pessoa física, média empresa, fora da área) e fios soltos (2b).
 - [ ] Selic e economia local afetando calote.
 - [ ] 6–10 cartas de prática (legal, cinza, ilegal) com os quatro números.

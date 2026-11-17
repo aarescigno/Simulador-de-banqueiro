@@ -142,7 +142,7 @@ export function EscPocket({ state, update }: TabProps) {
             </div>
             <p class="small dim phrase">{phrases[c]}</p>
             <button class="btn" disabled={!!reason} onClick={() => doDistribute(c)}>
-              {t.to(names[c])}
+              {c === 'laranja' ? t.to.laranja(laranja.short) : t.to[c]}
             </button>
             {reason && reason !== ui.pocket.noAmount && reason !== t.nothing && (
               <span class="small dim">{reason}</span>

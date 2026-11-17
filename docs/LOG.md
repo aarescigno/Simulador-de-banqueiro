@@ -6,6 +6,43 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-17 · Marco 1b, item 2a · Ciclo da ESC
+
+**Feito**
+- Motor do degrau 2 em `src/engine/escLoans.ts`: `enterEsc` (chamada no fim de `openEsc` e na migração 8 → 9), fichas de empresas (`generateEscRequests`), limite de capital (`principalLeft`, `escBook`, `escHeadroom`), lucro distribuível, `distribute` e `capitalize`, cobrança em três passos (`collectEsc`, `execute`, `executionQuote`) e o ramo `stepEsc` do `step`, sem medo, ocorrências, inquérito nem crise. As travas `ESC_SOON` saíram; as decisões do caderninho lançam `'Isso é do caderninho.'` no degrau 2 e as da ESC lançam `'Isso é da ESC.'` no degrau 1.
+- `SAVE_VERSION = 9`, com migração 8 → 9 (política da ESC, `stats.distributed`; quem já estava no degrau 2 entra de verdade).
+- Interface: `EscScreen` apagada; o degrau 2 usa o `Game` com `EscSummary`, `EscPortfolio`, `EscPolicies` e `EscPocket` (`src/ui/esc/`). `RequestCard` saiu do `Portfolio` para `src/ui/RequestCard.tsx` e serve aos dois degraus. Painel dev esconde os botões de ocorrência e processo no degrau 2.
+- Conteúdo: `companies.ts` (segmentos, motivos, cidades), `escLoans.ts` (textos e `escLines` do Jornal), três garantias novas em `collateral.ts`.
+- `sim`: bot do degrau 2 (`ESC_RATE`, `ESC_TERM`, `ESC_MODE`, `ESC_POL`, `ESC_GAR`) e colunas `ESC calote`, `distribuído`, `capital`, `execuções`.
+- Testes novos em `tests/escLoans.test.ts` e na migração de `tests/save.test.ts`. `testar.sh --tudo` verde.
+
+**Balanço** (`WEEKS=60 RATES=20 TERMS=8 RUNS=100 ESC=laranja`; nenhum parâmetro precisou de ajuste)
+
+| caso | ESC calote | distribuído (mediana) | capital |
+|---|---|---|---|
+| `ESC_RATE=8` (padrão) | 13,7% | R$ 12,8 mil | |
+| `ESC_RATE=4` | 8,1% | R$ 7,1 mil | |
+| `ESC_RATE=16` | 21,7% | R$ 14,1 mil | |
+| `ESC_GAR=0` | 21,3% | R$ 8,1 mil | |
+| `ESC_POL=cedo` | 33,5% | R$ 5,9 mil | |
+| `ESC_POL=semexec` | 11,3% | R$ 9,5 mil | |
+| `ESC_MODE=capitaliza` | 12,7% | 0 | R$ 40,5 mil |
+
+Todos dentro dos alvos do plano. Regressão: sem `ESC` e com `ESC=laranja`, as colunas do degrau 1 e `ESC x%` / `sem. ESC` saem idênticas às de antes (o `sim` compara o estado de antes do `enterEsc`, via `openEsc(estado, false)` e o gancho `onEscOpen` do bot).
+
+**Decisões**
+- `validThreshold` usado em `every` recebia o índice como limite; passou a ser chamado por seta.
+- Telas conferidas em 360 px (`scrollWidth` 360): Resumo, Carteira (pedido com veículo e com recebíveis, pedido que passa do limite, empréstimo atrasado), Bolso e Jornal. O fluxo manual no celular fica para o dono.
+
+**Próximo passo**
+- 2b, as regras que dá para quebrar (plano no briefing).
+
+**Modelo:** Sonnet, esforço médio.
+
+---
+
+---
+
 ## 2026-11-17 · Marco 1b, item 2 · Plano do ciclo da ESC (sem código)
 
 **Feito**

@@ -291,6 +291,8 @@ Uma condenação no degrau 1 fecha a porta dos degraus regulados (3+) para o seu
 - **Ameaças:** Receita Federal, ações judiciais de clientes, limite de crescimento.
 - **Fim do marco:** a escada continua (tela de "em breve" para SCD) ou game over/epílogo/herança.
 
+**Como está implementado (Marco 1b, item 2a).** Ao abrir a ESC, o medo zera, a reputação volta a 30 e a milícia, a mesada, o rival e a agenda acabam; a polícia só esfria e o bolso segue. Toda semana chegam de 1 a 5 fichas de MEI, microempresa ou pequena empresa da sede ou de um município vizinho, com faturamento, anos de CNPJ e nome limpo ou no Serasa. O jogador negocia taxa (1 a 30% ao mês), prazo (4 a 52 semanas) e garantia formal (veículo, equipamento ou recebíveis do cartão). O total na rua, em principal amortizado, não passa do capital declarado: esse é o limite. A cobrança tem três passos por política (ligação do escritório, Serasa, execução na Justiça); a execução retoma a garantia ou penhora 10% do saldo, e o advogado fica com um quinto. Sem execução, o calote em 6 semanas não recupera nada. O que passa do capital é lucro: distribuído vai para o bolso (com a taxa do compartimento) e é o placar; capitalizado sobe o limite e não volta. O bolso não volta para a ESC. Todas as fichas são legais; as irregulares vêm no 2b.
+
 ## 17. Fluxo de trabalho
 
 - Cada entrega é um PR pequeno para a `main` (uma fatia jogável por vez, ex.: "pedidos de empréstimo").

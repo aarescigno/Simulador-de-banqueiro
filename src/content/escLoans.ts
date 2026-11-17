@@ -63,7 +63,11 @@ export const escUi = {
     distribute: 'Distribuir lucro',
     distributeHint: 'Só sai da ESC o que passa do capital declarado.',
     available: (v: string) => `Lucro distribuível: ${v}.`,
-    to: (name: string) => `Para ${name}`,
+    to: {
+      own: 'Para o seu nome',
+      laranja: (short: string) => `Para ${short}`,
+      offshore: 'Para lá fora',
+    },
     nothing: 'Nada passa do capital agora.',
     capitalize: 'Capitalizar',
     capitalizeHint: 'O lucro vira capital: o limite sobe. Não volta mais para o bolso.',
