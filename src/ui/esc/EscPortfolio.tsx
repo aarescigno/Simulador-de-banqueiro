@@ -77,6 +77,7 @@ export function EscPortfolio({ state, update }: TabProps) {
                     <div class="dim small">
                       {c.city}
                       {c.cityKind === 'vizinho' && ` · ${cities.neighborTag}`}
+                      {c.cityKind === 'distante' && ` · ${cities.distantTag}`}
                     </div>
                   </div>
                   <span class="mono amber big right">{money(r.amount)}</span>
@@ -84,6 +85,16 @@ export function EscPortfolio({ state, update }: TabProps) {
                 <Signs company={c} />
               </>
             }
+            warning={
+              r.irregular === 'pf'
+                ? escUi.portfolio.warning.pf
+                : r.irregular === 'area'
+                  ? escUi.portfolio.warning.area(c.city)
+                  : r.irregular === 'media'
+                    ? escUi.portfolio.warning.media
+                    : undefined
+            }
+            lendLabel={r.irregular ? escUi.portfolio.lendAnyway : undefined}
             canLend={escCanAccept(state, r.id)}
             noLendLabel={over ? escUi.portfolio.overLimit(money(free)) : ui.portfolio.noCash}
             onLend={(monthlyRate, weeks, collateral) =>
@@ -188,7 +199,11 @@ function EscLoanRow({
           {l.missedStreak > 0 &&
             (ask ? (
               <ConfirmBar
-                text={escUi.portfolio.confirmExecute(name, money(executionQuote(l)))}
+                text={
+                  executionQuote(l) === 0
+                    ? escUi.portfolio.confirmDenied(name)
+                    : escUi.portfolio.confirmExecute(name, money(executionQuote(l)))
+                }
                 onYes={() => {
                   setAsk(false);
                   update(decide(state, { type: 'execute', loanId: l.id }));

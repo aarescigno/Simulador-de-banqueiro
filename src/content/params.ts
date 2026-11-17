@@ -408,6 +408,20 @@ export const escLoans = {
     /** Chance de a ficha vir de um município vizinho. */
     neighborChance: 0.25,
   },
+  /** Fichas fora das regras da ESC (2b). */
+  irregular: {
+    chance: 0.25,
+    mix: { pf: 0.5, area: 0.3, media: 0.2 },
+    pf: { amount: [1_000, 5_000] as const, risk: 0.15, maxRate: 6, veiculoChance: 0.2 },
+    area: { risk: 0.05, maxRate: 3, cities: ['Porto Lagoão', 'Lajedo Fundo'] as const },
+    media: {
+      amount: [20_000, 45_000] as const,
+      revenue: [400_000, 1_500_000] as const,
+      risk: -0.1,
+      veiculoChance: 0.8,
+      recebiveisChance: 0.9,
+    },
+  },
   porte: {
     mei: {
       weight: 45,

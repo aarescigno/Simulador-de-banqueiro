@@ -42,6 +42,7 @@ export function EscSummary({ state, update, goTo }: TabProps) {
               : undefined
           }
         />
+        {esc.loose > 0 && <Stat label={t.loose} value={esc.loose} tone="amber" />}
         <Stat
           label={t.writtenOff}
           value={state.stats.writtenOff}

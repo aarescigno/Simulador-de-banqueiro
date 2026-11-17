@@ -151,6 +151,7 @@ export function openEsc(state: GameState, enter = true): void {
     soldLoans: loans.length,
     sold: price,
     leftover,
+    loose: 0,
     ficha: {
       weeks: state.week,
       complaints: state.complaints,

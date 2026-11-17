@@ -6,6 +6,23 @@ Formato de cada entrada: data · item do roadmap · PR; o que foi feito; decisõ
 
 ---
 
+## 2026-11-17 · Marco 1b, item 2b · Regras da ESC que dá para quebrar
+
+**Feito**
+- Fichas irregulares em `generateEscRequests`: depois dos sorteios de cada ficha, `rng.chance(0,25)` e um `rng.next()` para o tipo (sempre sorteado, ordem fixa). Tipos: pessoa física (sem CNPJ, R$ 1–5 mil, só veículo), fora da área (Porto Lagoão, Lajedo Fundo) e média empresa (R$ 20–45 mil, faturamento até R$ 1,5 mi). Parâmetros em `escLoans.irregular`.
+- Aceitar uma irregular marca `loan.irregular`, soma `esc.loose` e gera o evento `looseThread`. Execução de contrato irregular devolve 0 e o evento `executed` vem com `denied`. Cartão com aviso âmbar e "Emprestar assim mesmo"; "Fios soltos" no Resumo; nota da LC 167/2019 no Bolso; confirmação de "Executar já" avisa quando vale 0.
+- `SAVE_VERSION = 10`, migração 9 → 10 (`esc.loose = 0`). Tipos novos: `Porte` ganha `pf` e `media`, `CityKind` ganha `distante`, `LegalPorte`, `Irregular`.
+- `sim`: `ESC_IRREG=1` (aceita irregulares), `ESC_IRREG_RATE`, colunas `irreg. aceitas` e `calote irreg.`.
+- Testes em `tests/escIrregular.test.ts`; testes antigos da ESC ajustados (sequência do RNG mudou, como previsto). `testar.sh` verde.
+
+**Balanço: alvo do `sim` NÃO atingido.** O plano esperava que, com `ESC_IRREG=1`, a ESC distribuísse 10–35% mais. Deu o contrário: ~4% menos (`ESC=consultoria RUNS=600 WEEKS=130 RATES=10 TERMS=8`: distribuído 32.650 sem, 29.753 com; calote da ESC 12,9% → 15,0%; calote nas irregulares 18,5%). Em teste direto a partir do degrau 2 (300 sementes, 60 semanas): 25.435 → 24.483, calote 12,1% → 13,7%. Causa: o capital declarado limita a carteira, então a irregular só ocupa o lugar de uma legal, e perde a garantia na execução. Os ajustes previstos não resolvem: `irregular.chance` maior piora (0,4 → 22.292); a média empresa quase nunca é aceita (R$ 20–45 mil contra capital de R$ 25 mil); cobrar taxa maior piora o pagamento; risco da pessoa física a 0 só empata. Valores do plano mantidos. A irregular precisa de algo que a faça compensar (volume ou retorno), e isso é decisão de design para planejar com o Opus. O `sim` aceita as irregulares só com `ESC_IRREG=1`.
+
+**Pendente:** conferir em 360 px o cartão irregular e o "Executar já" com valor 0 (não deu para abrir o navegador nesta sessão).
+
+Modelo: Sonnet, esforço médio
+
+---
+
 ## 2026-11-17 · Marco 1b, item 2a · Ciclo da ESC
 
 **Feito**

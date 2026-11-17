@@ -212,12 +212,17 @@ export function decide(prev: GameState, d: Decision): GameState {
       (esc ? escLoans.word.loanMade : collection.word.loanMade) +
       (collateral === 'inss' ? collection.inss.wordOnLend : 0),
   );
-  return schedule(state, state.week, {
+  const made = schedule(state, state.week, {
     type: 'loanMade',
     name,
     amount: req.amount,
     ...terms,
   });
+  if (esc && req.irregular) {
+    made.esc!.loose += 1;
+    return schedule(made, made.week, { type: 'looseThread', name, kind: req.irregular });
+  }
+  return made;
 }
 
 function validThreshold(t: number | null, max = collection.maxThreshold): boolean {

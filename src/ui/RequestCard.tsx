@@ -23,6 +23,10 @@ interface Props {
   canLend: boolean;
   /** Texto do botão quando não pode emprestar. */
   noLendLabel: string;
+  /** Aviso âmbar logo abaixo do cabeçalho (ficha irregular). */
+  warning?: string;
+  /** Texto do botão de emprestar, no lugar do padrão. */
+  lendLabel?: string;
   onLend: (rate: number, weeks: number, collateral: CollateralKind | null) => void;
   onRefuse: () => void;
 }
@@ -35,6 +39,8 @@ export function RequestCard({
   header,
   canLend,
   noLendLabel,
+  warning,
+  lendLabel,
   onLend,
   onRefuse,
 }: Props) {
@@ -49,6 +55,7 @@ export function RequestCard({
   return (
     <article class="card stack">
       {header}
+      {warning && <p class="small amber">{warning}</p>}
       <p class="reason">“{r.reason}”</p>
 
       <div class="stack tight">
@@ -137,7 +144,7 @@ export function RequestCard({
             onLend(rate, weeks, collateral);
           }}
         >
-          {canLend ? ui.portfolio.lend : noLendLabel}
+          {canLend ? (lendLabel ?? ui.portfolio.lend) : noLendLabel}
         </button>
         <button class="btn grow-btn" onClick={onRefuse}>
           {ui.portfolio.refuse}

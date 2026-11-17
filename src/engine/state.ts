@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 export interface Debtor {
   /** Nome completo, para a ficha. */
@@ -35,8 +35,14 @@ export type CollateralKind =
   | 'equipamento'
   | 'recebiveis';
 
-export type Porte = 'mei' | 'micro' | 'pequena';
-export type CityKind = 'sede' | 'vizinho';
+export type Porte = 'mei' | 'micro' | 'pequena' | 'pf' | 'media';
+export type CityKind = 'sede' | 'vizinho' | 'distante';
+
+/** Portes que a ESC pode atender. */
+export type LegalPorte = Exclude<Porte, 'pf' | 'media'>;
+
+/** Ficha que chega fora das regras da ESC: sem CNPJ, fora da área ou acima do porte. */
+export type Irregular = 'pf' | 'area' | 'media';
 
 /** A empresa da ficha do degrau 2. */
 export interface Company {
@@ -81,6 +87,8 @@ export interface LoanRequest {
   counter?: Counter;
   /** Degrau 2: a empresa que pede; o dono fica em `debtor`. */
   company?: Company;
+  /** Degrau 2: a ficha foge das regras da ESC. */
+  irregular?: Irregular;
 }
 
 export interface Loan {
@@ -114,6 +122,8 @@ export interface Loan {
   company?: Company;
   /** Degrau 2: passo de cobrança aplicado na última semana de atraso. */
   escLevel?: EscLevel | null;
+  /** Degrau 2: contrato fora do objeto da ESC; a garantia não vale. */
+  irregular?: Irregular;
 }
 
 /** Faixa da atenção policial; o número exato fica oculto. */
@@ -284,6 +294,8 @@ export interface Esc {
   sold: number;
   /** Caixa que sobrou do degrau 1 e foi para o bolso em seu nome. */
   leftover: number;
+  /** Fios soltos: contratos irregulares aceitos. */
+  loose: number;
   ficha: Ficha;
 }
 
@@ -348,7 +360,9 @@ export type GameEvent =
       recovered: number;
       writtenOff: number;
       collateral: CollateralKind | null;
+      denied?: true;
     }
+  | { type: 'looseThread'; name: string; kind: Irregular }
   | { type: 'distributed'; to: Compartment; amount: number; fee: number; who: string }
   | { type: 'capitalized'; amount: number; capital: number }
   | { type: 'mesadaFailed' }

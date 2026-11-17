@@ -5,12 +5,18 @@ export const cities = {
   seat: 'São Jurandir do Norte',
   neighbors: ['Barra do Jurandir', 'Vila Serena'],
   neighborTag: 'município vizinho',
+  distantTag: 'fora da área',
 };
+
+export const pfReason = 'Abro um MEI amanhã, se precisar.';
+export const pfSegment = 'Sem CNPJ';
 
 export const porteLabel: Record<Porte, string> = {
   mei: 'MEI',
   micro: 'Microempresa',
   pequena: 'Pequena empresa',
+  pf: 'Pessoa física',
+  media: 'Média empresa',
 };
 
 export interface Segment {

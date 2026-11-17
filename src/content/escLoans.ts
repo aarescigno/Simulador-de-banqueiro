@@ -22,6 +22,7 @@ export const escUi = {
     distributable: 'Lucro distribuível',
     pocket: 'Bolso protegido',
     writtenOff: 'Baixas',
+    loose: 'Fios soltos',
     word: { name: 'Reputação', text: 'Atrai pedidos. Execução e calote derrubam.' },
   },
   portfolio: {
@@ -35,6 +36,14 @@ export const escUi = {
     execute: 'Executar já',
     confirmExecute: (name: string, v: string) =>
       `Executar ${name} na Justiça? Recupera ${v}. O resto vira baixa.`,
+    confirmDenied: (name: string) =>
+      `Executar ${name}? Contrato fora do objeto da ESC: recupera R$ 0. Tudo vira baixa.`,
+    lendAnyway: 'Emprestar assim mesmo',
+    warning: {
+      pf: 'Pessoa física: sem CNPJ.',
+      area: (city: string) => `Fora da área: ${city} não faz divisa.`,
+      media: 'Média empresa: acima do porte da ESC.',
+    },
     stepNow: { aviso: 'Ligação do escritório', serasa: 'Nome no Serasa' } as Record<
       Exclude<EscLevel, 'execucao'>,
       string
@@ -73,6 +82,8 @@ export const escUi = {
     capitalizeHint: 'O lucro vira capital: o limite sobe. Não volta mais para o bolso.',
     capitalizeBtn: (v: string) => `Capitalizar ${v}`,
     confirmCapitalize: (v: string) => `Capitalizar ${v}? Vira capital declarado. Não sai mais.`,
+    irregularNote:
+      'Na vida real: o art. 9 da LC 167/2019 faz do descumprimento do objeto da ESC (capital próprio, porte, município) crime, com reclusão de 1 a 4 anos.',
     noReturn: 'O que está no bolso não volta para a ESC. O capital é declarado; o bolso, não.',
     retire: 'Fechar a ESC e se aposentar',
     confirmRetire: 'Fechar a ESC? O caixa vai para você. O que está na rua fica na rua.',
@@ -133,8 +144,17 @@ export function escLines(events: GameEvent[], week: number): string[] {
     const tail = level === 'serasa' ? ' Nome no Serasa.' : '';
     lines.push(`${names(group.map((e) => e.name))} ${verb}.${tail}`);
   }
+  for (const e of ofType(events, 'looseThread')) {
+    lines.push(
+      `Contrato com ${e.name} registrado como capital de giro de outra empresa. O contador anotou.`,
+    );
+  }
   for (const e of ofType(events, 'executed')) {
     const lost = `Baixado: ${money(e.writtenOff)}.`;
+    if (e.denied) {
+      lines.push(`${e.name}: execução negada. Contrato fora do objeto da ESC. ${lost}`);
+      continue;
+    }
     lines.push(
       e.collateral
         ? `${e.name}: execução na Justiça. ${collateralText[e.collateral].seized}: ${money(e.recovered)}. ${lost}`

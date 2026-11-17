@@ -41,6 +41,9 @@ const escTerm = Number(process.env.ESC_TERM ?? 12);
 const escMode = (process.env.ESC_MODE ?? 'distribui') as 'distribui' | 'capitaliza';
 const escPol = (process.env.ESC_POL ?? 'padrao') as 'padrao' | 'semexec' | 'cedo';
 const escGar = process.env.ESC_GAR !== '0';
+/** ESC_IRREG=1: o bot aceita também as fichas irregulares. */
+const escIrreg = process.env.ESC_IRREG === '1';
+const escIrregRate = process.env.ESC_IRREG_RATE ? Number(process.env.ESC_IRREG_RATE) : undefined;
 const policyNames = (process.env.POLICY ?? 'padrao').split(',');
 for (const policyName of policyNames) {
   for (const monthlyRate of (process.env.RATES ?? '5,10,20,30,50,80').split(',').map(Number)) {
@@ -68,6 +71,9 @@ for (const policyName of policyNames) {
       let escLoansN = 0;
       let escDefaults = 0;
       let executions = 0;
+      let irregAccepted = 0;
+      let irregLoans = 0;
+      let irregDefaults = 0;
       const distributed: number[] = [];
       const capitals: number[] = [];
       const seen = new Set<string>();
@@ -93,6 +99,8 @@ for (const policyName of policyNames) {
           escMode,
           escPolicy: escPol,
           escCollateral: escGar,
+          escIrregular: escIrreg,
+          escIrregularRate: escIrregRate,
         });
         let s = full;
         if (snap.pre) {
@@ -106,6 +114,11 @@ for (const policyName of policyNames) {
           const closedEsc = mine.filter((l) => l.startWeek <= WEEKS - escTerm - 6);
           escLoansN += closedEsc.length;
           escDefaults += closedEsc.filter((l) => l.status === 'defaulted').length;
+          const irreg = mine.filter((l) => l.irregular);
+          irregAccepted += irreg.length;
+          const irregClosed = irreg.filter((l) => l.startWeek <= WEEKS - escTerm - 6);
+          irregLoans += irregClosed.length;
+          irregDefaults += irregClosed.filter((l) => l.status === 'defaulted').length;
           executions += full.journal
             .flatMap((r) => r.events)
             .filter((e) => e.type === 'executed').length;
@@ -157,7 +170,8 @@ for (const policyName of policyNames) {
           `ocorrências ${(occurrences / RUNS).toFixed(1)} | distintas ${drawable.filter((id) => seen.has(id)).length}/${drawable.length} (${allIncidents.filter((id) => seen.has(id)).length}/${allIncidents.length}) | tragédia ${((100 * tragedies) / RUNS).toFixed(0)}% | crise ${((100 * crises) / RUNS).toFixed(0)}% | preso ${((100 * jailed) / RUNS).toFixed(0)}% | morto ${((100 * dead) / RUNS).toFixed(0)}% | exilado ${((100 * exiled) / RUNS).toFixed(0)}%` +
           (esc
             ? ` | ESC ${esc} ${((100 * opened) / RUNS).toFixed(0)}% | sem. ESC ${median(openWeeks)} | fachada pega ${((100 * caught) / RUNS).toFixed(0)}%` +
-              ` | ESC calote ${escLoansN ? ((100 * escDefaults) / escLoansN).toFixed(1) : '-'}% | distribuído ${median(distributed)} | capital ${median(capitals)} | execuções ${opened ? (executions / opened).toFixed(1) : '-'}`
+              ` | ESC calote ${escLoansN ? ((100 * escDefaults) / escLoansN).toFixed(1) : '-'}% | distribuído ${median(distributed)} | capital ${median(capitals)} | execuções ${opened ? (executions / opened).toFixed(1) : '-'}` +
+              ` | irreg. aceitas ${opened ? (irregAccepted / opened).toFixed(1) : '-'} | calote irreg. ${irregLoans ? ((100 * irregDefaults) / irregLoans).toFixed(1) : '-'}%`
             : ''),
       );
     }

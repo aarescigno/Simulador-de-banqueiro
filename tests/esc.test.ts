@@ -298,6 +298,7 @@ describe('openEsc', () => {
       soldLoans: 2,
       sold: 500,
       leftover: 7_500,
+      loose: 0,
       ficha: {
         weeks: 30,
         complaints: 3,
