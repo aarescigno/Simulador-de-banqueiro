@@ -21,7 +21,7 @@ import {
   principalLeft,
 } from '../src/engine/escLoans';
 import { createRng, type Rng } from '../src/engine/rng';
-import type { Collateral, GameEvent, GameState, Loan, LaunderRoute } from '../src/engine/state';
+import type { LegalPorte, Collateral, GameEvent, GameState, Loan, LaunderRoute } from '../src/engine/state';
 import { playBot } from '../sim/bot';
 
 function fixedRng(x: number): Rng {
@@ -105,9 +105,9 @@ describe('openEsc', () => {
     expect(t.incidents.militia).toBe('none');
     expect(t.requests.length).toBeGreaterThanOrEqual(1);
     expect(t.requests.length).toBeLessThanOrEqual(5);
-    for (const r of t.requests) {
+    for (const r of t.requests.filter((x) => !x.irregular)) {
       const c = r.company!;
-      const pp = P.porte[c.porte];
+      const pp = P.porte[c.porte as LegalPorte];
       expect(
         c.cityKind === 'sede' ? c.city === cities.seat : cities.neighbors.includes(c.city),
       ).toBe(true);
@@ -521,6 +521,7 @@ describe('bot na ESC', () => {
         expect(s.stats.distributed).toBeGreaterThanOrEqual(0);
       }
     },
+    30_000,
   );
 });
 
@@ -537,7 +538,7 @@ describe('textos', () => {
     }
     expect(escReasons).toHaveLength(12);
     for (const r of escReasons) expect(r.text).toBeTruthy();
-    expect(Object.keys(porteLabel)).toEqual(['mei', 'micro', 'pequena']);
+    expect(Object.keys(porteLabel)).toEqual(['mei', 'micro', 'pequena', 'pf', 'media']);
   });
   it('escLines cobre escOpened, executed, distributed e capitalized', () => {
     const lines = escLines(

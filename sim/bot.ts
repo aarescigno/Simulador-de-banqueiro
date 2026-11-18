@@ -65,6 +65,10 @@ export interface BotOptions {
   escPolicy?: 'padrao' | 'semexec' | 'cedo';
   /** Degrau 2: exige garantia (ESC_GAR=0 desliga). Padrão: sim. */
   escCollateral?: boolean;
+  /** Degrau 2: aceita também as fichas irregulares (ESC_IRREG=1). Padrão: recusa. */
+  escIrregular?: boolean;
+  /** Degrau 2: taxa nas irregulares (ESC_IRREG_RATE). Padrão: a mesma da ESC. */
+  escIrregularRate?: number;
 }
 
 /** Caixa que o bot mantém para emprestar; o resto vai para o bolso. */
@@ -109,7 +113,7 @@ function botDecideEsc(state: GameState, o: BotOptions): GameState {
   const rate = o.escRate ?? 8;
   const weeks = o.escWeeks ?? 12;
   for (const r of [...s.requests]) {
-    if (!escCanAccept(s, r.id)) {
+    if (!escCanAccept(s, r.id) || (r.irregular && !o.escIrregular)) {
       s = decide(s, { type: 'refuse', requestId: r.id });
       continue;
     }
@@ -117,7 +121,11 @@ function botDecideEsc(state: GameState, o: BotOptions): GameState {
       (o.escCollateral ?? true)
         ? (escStrongest.find((k) => r.assets.some((a) => a.kind === k)) ?? null)
         : null;
-    const terms = { monthlyRate: rate, weeks, collateral };
+    const terms = {
+      monthlyRate: r.irregular ? (o.escIrregularRate ?? rate) : rate,
+      weeks,
+      collateral,
+    };
     s = decide(s, { type: 'accept', requestId: r.id, ...terms });
     const counter = s.requests.find((x) => x.id === r.id)?.counter;
     if (counter && (o.takeCounter ?? true)) {

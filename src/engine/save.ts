@@ -77,6 +77,11 @@ const migrations: Record<number, Migration> = {
     if (next.tier === 2) enterEsc(next as unknown as GameState);
     return next;
   },
+  // 9 → 10: fios soltos da ESC.
+  9: (old) => {
+    if (old.esc) return { ...old, esc: { ...(old.esc as Obj), loose: 0 } };
+    return old;
+  },
 };
 
 export class SaveError extends Error {}

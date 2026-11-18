@@ -1,6 +1,6 @@
 // Degrau 2: fichas de pequenas empresas, limite de capital, cobrança formal, distribuir e capitalizar.
 // Tudo aqui é legal no 2a: ESC empresta capital próprio a MEI, micro e pequena da região.
-import { cities, escReasons, segments } from '../content/companies';
+import { cities, escReasons, pfReason, pfSegment, segments } from '../content/companies';
 import {
   escLoans as P,
   params,
@@ -21,9 +21,10 @@ import type {
   EscLevel,
   GameEvent,
   GameState,
+  Irregular,
   Loan,
   LoanRequest,
-  Porte,
+  LegalPorte,
 } from './state';
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
@@ -68,8 +69,8 @@ export function enterEsc(state: GameState): void {
 // Fichas
 // ---------------------------------------------------------------------------------------------
 
-function pickPorte(rng: Rng): Porte {
-  const entries = Object.entries(P.porte) as [Porte, (typeof P.porte)[Porte]][];
+function pickPorte(rng: Rng): LegalPorte {
+  const entries = Object.entries(P.porte) as [LegalPorte, (typeof P.porte)[LegalPorte]][];
   const total = entries.reduce((s, [, v]) => s + v.weight, 0);
   let x = rng.next() * total;
   for (const [k, v] of entries) {
@@ -118,24 +119,27 @@ export function generateEscRequests(state: GameState, rng: Rng): LoanRequest[] {
     const serasa = rng.chance(R.serasaChance);
     const reason = rng.pick(escReasons);
     const amount = roundTo(rng.int(pp.amount[0], pp.amount[1]), 500);
-    const raw =
-      rng.next() * R.baseRisk[0] +
-      rng.next() * R.baseRisk[1] +
-      pp.risk +
-      seg.risk +
-      reason.risk +
-      (serasa ? R.serasaRisk : 0) +
-      (years < R.youngYears ? R.youngRisk : 0) +
-      R.leverageRisk * Math.max(0, amount / revenue - R.leverageFree);
-    const risk = Math.round(clamp(raw, R.riskClamp[0], R.riskClamp[1]) * 1000) / 1000;
+    const baseRnd = rng.next() * R.baseRisk[0] + rng.next() * R.baseRisk[1];
+    const riskOf = (porteRisk: number, amt: number, rev: number | null) => {
+      const raw =
+        baseRnd +
+        porteRisk +
+        seg.risk +
+        reason.risk +
+        (serasa ? R.serasaRisk : 0) +
+        (years < R.youngYears ? R.youngRisk : 0) +
+        (rev ? R.leverageRisk * Math.max(0, amt / rev - R.leverageFree) : 0);
+      return Math.round(clamp(raw, R.riskClamp[0], R.riskClamp[1]) * 1000) / 1000;
+    };
     const neg = P.negotiation;
-    const maxRate = Math.max(
-      1,
-      Math.round(neg.base + neg.riskWeight * risk + rng.next() * neg.spread),
-    );
+    const spread = rng.next() * neg.spread;
+    const maxRateOf = (risk: number, bonus = 0) =>
+      Math.max(1, Math.round(neg.base + neg.riskWeight * risk + spread) + bonus);
+    let risk = riskOf(pp.risk, amount, revenue);
+    let maxRate = maxRateOf(risk);
     const patience = rng.int(neg.patience[0], neg.patience[1]);
     const c = params.collateral;
-    const assets: Collateral[] = [];
+    let assets: Collateral[] = [];
     if (rng.chance(seg.veiculo)) {
       assets.push({
         kind: 'veiculo',
@@ -161,6 +165,58 @@ export function generateEscRequests(state: GameState, rng: Rng): LoanRequest[] {
       years,
       serasa,
     };
+    let reasonText = reason.text;
+    let amountFinal = amount;
+
+    // Ficha irregular: o sorteio do tipo sai sempre, para a ordem do RNG ficar fixa.
+    const I = P.irregular;
+    const isIrregular = rng.chance(I.chance);
+    const roll = rng.next();
+    let irregular: Irregular | undefined;
+    if (isIrregular) {
+      irregular = roll < I.mix.pf ? 'pf' : roll < I.mix.pf + I.mix.area ? 'area' : 'media';
+      if (irregular === 'pf') {
+        amountFinal = roundTo(rng.int(I.pf.amount[0], I.pf.amount[1]), 500);
+        company.name = `${first} ${last}`;
+        company.segment = pfSegment;
+        company.porte = 'pf';
+        company.revenue = 0;
+        company.years = 0;
+        reasonText = pfReason;
+        risk = riskOf(I.pf.risk, amountFinal, null);
+        maxRate = maxRateOf(risk, I.pf.maxRate);
+        assets = [];
+        if (rng.chance(I.pf.veiculoChance)) {
+          assets.push({
+            kind: 'veiculo',
+            value: roundTo(rng.int(c.veiculo.value[0], c.veiculo.value[1]), 500),
+          });
+        }
+      } else if (irregular === 'area') {
+        company.city = rng.pick(I.area.cities);
+        company.cityKind = 'distante';
+        risk = riskOf(pp.risk + I.area.risk, amount, revenue);
+        maxRate = maxRateOf(risk, I.area.maxRate);
+      } else {
+        const m = I.media;
+        amountFinal = roundTo(rng.int(m.amount[0], m.amount[1]), 500);
+        const rev = roundTo(rng.int(m.revenue[0], m.revenue[1]), 5_000);
+        company.porte = 'media';
+        company.revenue = rev;
+        risk = riskOf(m.risk, amountFinal, rev);
+        maxRate = maxRateOf(risk);
+        assets = [];
+        if (rng.chance(m.veiculoChance)) {
+          assets.push({
+            kind: 'veiculo',
+            value: roundTo(rng.int(c.veiculo.value[0], c.veiculo.value[1]), 500),
+          });
+        }
+        if (rng.chance(m.recebiveisChance)) {
+          assets.push({ kind: 'recebiveis', value: round100(rev * c.recebiveis.revenueShare) });
+        }
+      }
+    }
     out.push({
       id: state.nextId++,
       week: state.week,
@@ -170,13 +226,14 @@ export function generateEscRequests(state: GameState, rng: Rng): LoanRequest[] {
         initials: `${first[0]}${last[0]}`,
         profession: seg.label,
       },
-      amount,
-      reason: reason.text,
+      amount: amountFinal,
+      reason: reasonText,
       risk,
       assets,
       maxRate,
       patience,
       company,
+      ...(irregular ? { irregular } : {}),
     });
   }
   return out;
@@ -299,6 +356,8 @@ export function escPayChance(
 }
 
 function executionRecovered(loan: Loan): { recovered: number; collateral: Collateral | null } {
+  // Contrato fora do objeto da ESC: nem garantia nem penhora.
+  if (loan.irregular) return { recovered: 0, collateral: null };
   const owed = loan.totalDue - loan.totalPaid;
   const c = loan.collateral;
   const E = P.collection.execution;
@@ -330,6 +389,7 @@ export function execute(state: GameState, loan: Loan, events: GameEvent[]): void
     recovered,
     writtenOff: owed - recovered,
     collateral: collateral?.kind ?? null,
+    ...(loan.irregular ? { denied: true as const } : {}),
   });
 }
 

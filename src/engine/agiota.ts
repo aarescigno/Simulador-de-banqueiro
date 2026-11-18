@@ -78,6 +78,7 @@ export function makeLoan(state: GameState, req: LoanRequest, terms: LoanTerms): 
     lastLevel: null,
     status: 'active',
     ...(req.company ? { company: { ...req.company }, escLevel: null } : {}),
+    ...(req.irregular ? { irregular: req.irregular } : {}),
   };
 }
 

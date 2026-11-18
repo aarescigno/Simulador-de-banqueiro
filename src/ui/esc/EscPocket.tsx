@@ -209,6 +209,7 @@ export function EscPocket({ state, update }: TabProps) {
       </details>
 
       <p class="small dim">{t.realLife}</p>
+      <p class="small dim">{t.irregularNote}</p>
     </div>
   );
 }
