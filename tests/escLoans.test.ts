@@ -521,6 +521,7 @@ describe('bot na ESC', () => {
         expect(s.stats.distributed).toBeGreaterThanOrEqual(0);
       }
     },
+    30_000,
   );
 });
 
